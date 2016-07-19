@@ -16,10 +16,11 @@
 }
 
 .site-title {
-    font-size: 56px;
-    font-weight: 300;
-    line-height: 56px;
-    letter-spacing: -1px;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 42px; // this could be good for setting vertical spacing?
+    font-family: $title-font-family;
+    // letter-spacing: -1px;
     margin-bottom: 0;
     float: left;
 
@@ -27,6 +28,12 @@
     &:visited {
         color: $white-color;
     }
+}
+
+.site-title-brace {
+    color: $grey-color;
+    position: relative;
+    bottom: 3px;
 }
 
 .site-nav {
@@ -205,8 +212,11 @@
 /**
  * Posts
  */
-.post-header {
+.page-header {
     margin-bottom: $spacing-unit;
+
+    // center the titles of all pages
+    text-align: center;
 }
 
 .post-title {
