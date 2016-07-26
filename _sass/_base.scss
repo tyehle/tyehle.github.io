@@ -99,7 +99,7 @@ a {
     // }
 
     &:hover {
-        color: $text-color;
+        // color: $text-color;
         text-decoration: underline;
     }
 }
@@ -201,4 +201,8 @@ pre {
 
         g { fill: $white-color; }
     }
+
+    // move icons up a bit
+    position: relative;
+    bottom: 3px;
 }

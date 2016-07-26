@@ -8,10 +8,8 @@ This is the base Jekyll theme. You can find out more info about customizing your
 
 This is a change.
 
-You can find the source code for the Jekyll new theme at:
-{% include icon-github.html username="jglovier" %} /
+You can find the source code for the Jekyll new theme at
 [jekyll-new](https://github.com/jglovier/jekyll-new)
 
 You can find the source code for Jekyll at
-{% include icon-github.html username="jekyll" %} /
 [jekyll](https://github.com/jekyll/jekyll)

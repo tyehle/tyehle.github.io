@@ -148,16 +148,17 @@
     margin-bottom: $spacing-unit / 2;
 }
 
-.contact-list,
 .social-media-list {
     list-style: none;
     margin-left: 0;
+    padding: 40 0 0 0px;
 }
 
 .footer-col-wrapper {
     font-size: 15px;
     color: $grey-color;
-    margin-left: -$spacing-unit / 2;
+    // margin-left: -$spacing-unit / 2;
+    align: center;
     @extend %clearfix;
 }
 
@@ -177,10 +178,10 @@
     width:         calc(20% - (#{$spacing-unit} / 2));
 }
 
-.footer-col-3 {
-    width: -webkit-calc(45% - (#{$spacing-unit} / 2));
-    width:         calc(45% - (#{$spacing-unit} / 2));
-}
+// .footer-col-3 {
+//     width: -webkit-calc(45% - (#{$spacing-unit} / 2));
+//     width:         calc(45% - (#{$spacing-unit} / 2));
+// }
 
 @include media-query($on-laptop) {
     .footer-col-1,
@@ -189,10 +190,10 @@
         width:         calc(50% - (#{$spacing-unit} / 2));
     }
 
-    .footer-col-3 {
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
-    }
+    // .footer-col-3 {
+    //     width: -webkit-calc(100% - (#{$spacing-unit} / 2));
+    //     width:         calc(100% - (#{$spacing-unit} / 2));
+    // }
 }
 
 @include media-query($on-palm) {
@@ -200,6 +201,14 @@
         float: none;
         width: -webkit-calc(100% - (#{$spacing-unit} / 2));
         width:         calc(100% - (#{$spacing-unit} / 2));
+    }
+}
+
+.username {
+    color: $white-color;
+
+    &:hover {
+        text-decoration: inherit;
     }
 }
 
