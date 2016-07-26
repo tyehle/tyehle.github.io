@@ -4,7 +4,7 @@
 .site-header {
     // border-top: 5px solid $grey-color-dark;
     // border-bottom: 1px solid $grey-color-light;
-    min-height: 150px;
+    min-height: 95px;
 
     background-color: $brand-color;
     background-size: cover;
@@ -27,6 +27,12 @@
     &,
     &:visited {
         color: $white-color;
+        text-decoration: inherit;
+    }
+
+    &:hover {
+        color: $white-color;
+        text-decoration: inherit;
     }
 }
 
@@ -40,13 +46,22 @@
     float: right;
     line-height: 56px;
 
+    font-family: $title-font-family;
+    font-size: 24px;
+    font-weight: 700;
+
     .menu-icon {
         display: none;
     }
 
     .page-link {
-        color: $text-color;
+        color: $white-color;
         line-height: $base-line-height;
+
+        &:hover {
+            color: $grey-color;
+            text-decoration: inherit;
+        }
 
         // Gaps between nav items, but not on the last one
         &:not(:last-child) {
