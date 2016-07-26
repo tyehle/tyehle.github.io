@@ -18,7 +18,7 @@
 .site-title {
     font-size: 42px;
     font-weight: 700;
-    line-height: 42px; // this could be good for setting vertical spacing?
+    line-height: 80px; // used for vertical spacing
     font-family: $title-font-family;
     // letter-spacing: -1px;
     margin-bottom: 0;
@@ -44,7 +44,7 @@
 
 .site-nav {
     float: right;
-    line-height: 56px;
+    line-height: 90px;
 
     font-family: $title-font-family;
     font-size: 24px;
@@ -66,6 +66,19 @@
         // Gaps between nav items, but not on the last one
         &:not(:last-child) {
             margin-right: 20px;
+        }
+
+        .current-page-link {
+            color: $text-color
+        }
+    }
+
+    .current-page-link {
+        @extend .page-link;
+        color: $text-color;
+
+        &:hover {
+            color: $text-color;
         }
     }
 
