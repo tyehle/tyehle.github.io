@@ -8,7 +8,7 @@ Class Projects
 --------------
 
 - An implementation of Java style interfaces in a lisp like language
-- Most of a Python [compiler](http://tobin.yehle.io/python-compiler.html)
+- Most of a Python [compiler]({% post_url 2015-10-31-python_compiler %})
 - A regex matcher using derivatives in JavaScript
 - Character recognition on sheet music
 - ID3 decision trees

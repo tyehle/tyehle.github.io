@@ -19,6 +19,9 @@
             {% if my_page.url == "/" %}
               <!-- Do not show a link to the home page in the nav bar -->
 
+            {% elsif site.hidden_pages contains my_page.title %}
+              <!-- Do not show hidden pages in the nav bar -->
+
             {% elsif my_page.url == page.url %}
               <a class="current-page-link" href="{{ my_page.url | prepend: site.baseurl }}">{{ my_page.title }}</a>
             
