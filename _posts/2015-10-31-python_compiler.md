@@ -1,7 +1,6 @@
 ---
 layout: post
 title: Python Compiler
-permalink: /articles/python-compiler
 ---
 
 Every assignment in [Matt Might's compilers class](http://matt.might.net/teaching/compilers/spring-2015/) at the University of Utah is a piece of a compiler for Python. In an ideal world at the end of the semester all of the students would have made an end to end system that can fully compile Python into a low level language such as Java bytecode or x86. During the semester Matt Might was called to Washington to help set up the [Precision Medicine Initiative](http://www.nih.gov/precisionmedicine/) which caused the class schedule to lag. There were only four projects in the end, and the output of the system was a normalized subset of Python ready for a CPS transform.

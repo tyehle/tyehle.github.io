@@ -23,3 +23,5 @@ hidden_posts: ['Python Compiler']
 markdown: kramdown
 markdown_ext: markdown,mkdown,mkdn,mkd,md
 include: ['_pages']
+
+permalink: /articles/:title

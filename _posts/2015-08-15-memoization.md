@@ -1,7 +1,6 @@
 ---
 layout: post
 title: Tail Call Optimized Memoization in Scala
-permalink: /articles/memoization
 ---
 
 Memoization is a technique where one saves the result of a function so if the function is ever called again with the same inputs it does not have to compute the result a second time.

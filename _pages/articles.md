@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Snippets
-permalink: /snippets
+title: Articles
+permalink: /articles/
 ---
 
 This is a list of bits of code or pieces of information I found useful or interesting when I learned them. They are here either because I think others may find them useful, or I suspect I will forget them and want to refer back here in the future.
