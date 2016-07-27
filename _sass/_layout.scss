@@ -297,3 +297,26 @@
         }
     }
 }
+
+
+/**
+ * Images
+ * source: https://superdevresources.com/image-caption-jekyll/
+ */
+.image-wrapper {
+    text-align: center;
+    padding: $spacing-unit;
+
+    .image-caption {
+        color: $grey-color;
+        margin-top: $spacing-unit / 4;
+        margin-bottom: 0;
+    }
+
+    .image {
+        border: 1px;
+        border-style: solid;
+        border-color: $text-color;
+    }
+}
+
