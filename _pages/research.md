@@ -4,8 +4,6 @@ title: Research
 permalink: /research/
 ---
 
-***
-
 I'm currently doing research in natural language parsing with [Dr. Vivek Srikumar](http://svivek.com).
 In the past I have worked with [Dr. Ronaldo Menezes](http://cs.fit.edu/~rmenezes/Home.html) on complex networks.
 

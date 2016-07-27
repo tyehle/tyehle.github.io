@@ -40,7 +40,7 @@
 }
 
 .site-title-brace {
-    color: $grey-color;
+    color: #909090;
     position: relative;
     bottom: 3px;
 }
@@ -83,9 +83,9 @@
 
     @include media-query($on-palm) {
         position: absolute;
+        z-index: 10;
         top: 25px;
         right: $spacing-unit;
-        // background-color: $background-color;
         background-color: $brand-color;
         border: 2px solid $grey-color;
         border-radius: 5px;
@@ -129,10 +129,6 @@
             }
             margin-left: 20px;
         }
-
-        // .current-page-link {
-        //     @extend .page-link;
-        // }
     }
 }
 
@@ -153,16 +149,16 @@
 }
 
 .social-media-list {
+    margin-top: 40px;
     list-style: none;
     margin-left: 0;
-    padding: 40 0 0 0px;
 }
 
 .footer-col-wrapper {
     font-size: 15px;
     color: $grey-color;
     width: 400px;
-    margin: 0 auto;
+    margin: auto;
     // margin-left: -$spacing-unit / 2;
     @extend %clearfix;
 }
@@ -181,6 +177,23 @@
 .footer-col-2 {
     width: -webkit-calc(30% - (#{$spacing-unit} / 2));
     width:         calc(30% - (#{$spacing-unit} / 2));
+}
+
+@include media-query($on-palm) {
+    .footer-col {
+        float: none;
+    }
+
+    .footer-col-1 {
+        width: 100%;
+        margin-bottom: 0px;
+    }
+
+    .footer-col-2 {
+        width: 100%;
+        margin-top: 0px;
+        padding-left: $spacing-unit * 2;
+    }
 }
 
 .footer-contact {
