@@ -70,10 +70,6 @@
         &:not(:last-child) {
             margin-right: 20px;
         }
-
-        .current-page-link {
-            color: $text-color
-        }
     }
 
     .current-page-link {
@@ -87,10 +83,11 @@
 
     @include media-query($on-palm) {
         position: absolute;
-        top: 9px;
-        right: $spacing-unit / 2;
-        background-color: $background-color;
-        border: 1px solid $grey-color-light;
+        top: 25px;
+        right: $spacing-unit;
+        // background-color: $background-color;
+        background-color: $brand-color;
+        border: 2px solid $grey-color;
         border-radius: 5px;
         text-align: right;
 
@@ -108,7 +105,7 @@
                 height: 15px;
 
                 path {
-                    fill: $grey-color-dark;
+                    fill: $white-color;
                 }
             }
         }
@@ -132,6 +129,10 @@
             }
             margin-left: 20px;
         }
+
+        // .current-page-link {
+        //     @extend .page-link;
+        // }
     }
 }
 
