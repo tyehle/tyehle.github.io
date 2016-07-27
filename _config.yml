@@ -17,6 +17,7 @@ url: "http://tobin.yehle.io" # the base hostname & protocol for your site
 github_username:  tyehle
 bitbucket_username: tobinyehle
 
+nav_pages: ['Projects', 'Research', 'Articles']
 hidden_posts: ['Python Compiler']
 
 # Build settings

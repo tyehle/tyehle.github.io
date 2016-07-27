@@ -2,6 +2,7 @@
 layout: page
 title: Research
 permalink: /research
+weight: 2
 ---
 
 I'm currently doing research in natural language parsing with [Dr. Vivek Srikumar](http://svivek.com).
