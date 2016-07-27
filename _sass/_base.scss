@@ -82,6 +82,8 @@ li {
  * Headings
  */
 h1, h2, h3, h4, h5, h6 {
+    color: $brand-color;
+    font-family: $title-font-family;
     font-weight: $base-font-weight;
 }
 
@@ -104,6 +106,37 @@ a {
     }
 }
 
+
+/**
+ * Horizontal Rules
+ */
+hr {
+    margin-left: $spacing-unit;
+    margin-right: $spacing-unit;
+
+    margin-top: $spacing-unit;
+    margin-bottom: $spacing-unit - 28;
+
+    border-style: none;
+    border-top: 1px solid $brand-color;
+
+    text-align: center;
+
+    &:after {
+        content: '//';
+        display: inline-block;
+        position: relative;
+        top: -14px;
+        padding: 0 15px;
+
+        background: $white-color;
+        color: $brand-color;
+
+        font-family: "Source Code Pro", monospace;
+        font-weight: 700;
+        font-size: 14;
+    }
+}
 
 
 /**
