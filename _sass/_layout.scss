@@ -15,10 +15,13 @@
     position: relative;
 }
 
+.header-title {
+    line-height: 80px; // used for vertical spacing
+}
+
 .site-title {
     font-size: 42px;
     font-weight: 700;
-    line-height: 80px; // used for vertical spacing
     font-family: $title-font-family;
     // letter-spacing: -1px;
     margin-bottom: 0;
@@ -157,8 +160,9 @@
 .footer-col-wrapper {
     font-size: 15px;
     color: $grey-color;
+    width: 400px;
+    margin: 0 auto;
     // margin-left: -$spacing-unit / 2;
-    align: center;
     @extend %clearfix;
 }
 
@@ -169,39 +173,17 @@
 }
 
 .footer-col-1 {
-    width: -webkit-calc(35% - (#{$spacing-unit} / 2));
-    width:         calc(35% - (#{$spacing-unit} / 2));
+    width: -webkit-calc(70% - (#{$spacing-unit} / 2));
+    width:         calc(70% - (#{$spacing-unit} / 2));
 }
 
 .footer-col-2 {
-    width: -webkit-calc(20% - (#{$spacing-unit} / 2));
-    width:         calc(20% - (#{$spacing-unit} / 2));
+    width: -webkit-calc(30% - (#{$spacing-unit} / 2));
+    width:         calc(30% - (#{$spacing-unit} / 2));
 }
 
-// .footer-col-3 {
-//     width: -webkit-calc(45% - (#{$spacing-unit} / 2));
-//     width:         calc(45% - (#{$spacing-unit} / 2));
-// }
-
-@include media-query($on-laptop) {
-    .footer-col-1,
-    .footer-col-2 {
-        width: -webkit-calc(50% - (#{$spacing-unit} / 2));
-        width:         calc(50% - (#{$spacing-unit} / 2));
-    }
-
-    // .footer-col-3 {
-    //     width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-    //     width:         calc(100% - (#{$spacing-unit} / 2));
-    // }
-}
-
-@include media-query($on-palm) {
-    .footer-col {
-        float: none;
-        width: -webkit-calc(100% - (#{$spacing-unit} / 2));
-        width:         calc(100% - (#{$spacing-unit} / 2));
-    }
+.footer-contact {
+    margin-left: 39px;
 }
 
 .username {
