@@ -20,10 +20,6 @@ bitbucket_username: tobinyehle
 hidden_posts: ['Python Compiler']
 
 # Build settings
-markdown: redcarpet
+markdown: kramdown
 markdown_ext: markdown,mkdown,mkdn,mkd,md
 include: ['_pages']
-
-redcarpet:
-    extensions: ["tables", "autolink", "strikethrough", "space_after_headers", "fenced_code_blocks"]
-
