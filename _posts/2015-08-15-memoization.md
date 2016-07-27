@@ -54,7 +54,7 @@ The first step is to make a more general `memoize` function.
 
 Due to limitations in scala generics the functions I will be able to memoize will all have the type signature `I=>O`, that is they accept only one input of type `I` and produce an output of type `O`.
 
-If I am going to write a more general `memoize` function, in what way should it be more general? I decided that forcing a specific caching system was not necessisary.
+If I am going to write a more general `memoize` function, in what way should it be more general? I decided that forcing a specific caching system was not necessary.
 Checking a cache may be able to give an answer very quickly, but not always, but may sometimes fail. I will call this function `check` and its type is `I=>Option[O]`.
 After I compute a result the hard way I should save it away so `check` can return it in the future. I will call this saving function `update` and its type is `(I,O)=>Unit`. Using this framework I implemented a generic `memoize` function.
 
@@ -108,7 +108,7 @@ First of all: what is tail recursion? A tail recursive function only has calls t
 In a language like Java with an explicit `return` keyword this means the only recursive calls are of the form `return myself(...);`.
 More generally, the result of the recursive function is equal to the recursive call, or some atomic value.
 
-The Fibonacci function branches into two subcalls, `fib(n-1)` and `fib(n-2)`, at every step which introduces its own set of problems.
+The Fibonacci function branches into two sub-calls, `fib(n-1)` and `fib(n-2)`, at every step which introduces its own set of problems.
 For starters  I implemented factorial.
 
 ```scala
@@ -128,7 +128,7 @@ Continuation Passing Style
 --------------------------
 
 I will leave a full explanation of continuation passing style to others.
-Some good explinations are [here](http://matt.might.net/articles/by-example-continuation-passing-style/) and [here](https://www.cs.utah.edu/~mflatt/past-courses/cs6520/public_html/s02/cps.pdf).
+Some good explanations are [here](http://matt.might.net/articles/by-example-continuation-passing-style/) and [here](https://www.cs.utah.edu/~mflatt/past-courses/cs6520/public_html/s02/cps.pdf).
 In this specific case the continuation acts as a return for the recursive function. The recursive function must, at some point, call the continuation it is passed with the result it is to return.
 Note the type of the continuation here is `O=>O`. The following is the same factorial function rewritten in continuation passing style. This change lets me write all recursive calls in tail position.
 
@@ -232,4 +232,4 @@ Limitations
 
 - Continuations are not easy to read. All of the simplicity of the initial Fibonacci function has been lost. In most cases arbitrary depth recursion is not a requirement, so the more elegant `memoizeMap` version could be used instead.
 
-- Input must be a single type. Without macros accepting an arbitrary number inputs in a typesafe manner is simply not possible. Yes you could write a different version that accepts two input functions, or put your arguments into a tuple. In my mind these are not acceptable solutions.
+- Input must be a single type. Without macros accepting an arbitrary number inputs in a type-safe manner is simply not possible. Yes you could write a different version that accepts two input functions, or put your arguments into a tuple. In my mind these are not acceptable solutions.

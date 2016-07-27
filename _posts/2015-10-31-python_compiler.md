@@ -57,7 +57,7 @@ It would generate
 (ENDMARKER)
 ```
 
-The hardest part of the stage was dealing with unicode in variable names, and strings. Variables were required to be NFKC normalized, and string literals had to be properly represented in Racket. The lexer requires some state to deal with the whitespace correctly, and there are some interesting corner cases with the ellipsis literal and a regular period.
+The hardest part of the stage was dealing with Unicode in variable names, and strings. Variables were required to be NFKC normalized, and string literals had to be properly represented in Racket. The lexer requires some state to deal with the whitespace correctly, and there are some interesting corner cases with the ellipsis literal and a regular period.
 
 ***
 
@@ -191,7 +191,7 @@ For example the statement
 result = 3*x + 4*y
 ```
 
-would be interally represented after parsing and desugaring as
+would be internally represented after parsing and desugaring as
 
 ```racket
 '(Assign (targets (Name result))

@@ -14,14 +14,18 @@ Class Projects
 - Character recognition on sheet music
 - ID3 decision trees
 - Neural nets with backprop training
-- SVM with various loss funcions and SGD training
+- SVM with various loss functions and SGD training
+- A Dominion AI
+- An interesting sudoku solver
+- A question answering system
+- Clustering analysis of suicide cases
+- A dynamical friction simulation
 
 Personal Projects
 -----------------
 
-- A block game with a strance projection [[src](https://bitbucket.org/tobinyehle/fieldgame)]
+- A block game with a strange projection [[src](https://bitbucket.org/tobinyehle/fieldgame)]
 - Particle simulation [[src](https://bitbucket.org/tobinyehle/particles)]
 - A lame sudoku solver [[src](https://bitbucket.org/tobinyehle/sudoku-solver)]
-- A more interesting sudoku solver [[src]()]
 - Boggle solver [[src](https://bitbucket.org/tobinyehle/bogglesolver)]
 - ASCII art generator [[src](https://bitbucket.org/tobinyehle/ascii-converter)]
