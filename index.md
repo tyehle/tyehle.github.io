@@ -3,7 +3,7 @@ layout: page
 title: About Me
 ---
 
-{% include image.html img="portrait.jpg" %}
+{% include image.html img="images/portrait.jpg" %}
 
 
 I am currently a student at the University of Utah working towards my bachelors in Computer Science. My areas of interest are machine learning, natural language processing, and programming languages.
