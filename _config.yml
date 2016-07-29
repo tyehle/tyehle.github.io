@@ -18,7 +18,7 @@ github_username:  tyehle
 bitbucket_username: tobinyehle
 
 nav_pages: ['Projects', 'Research', 'Articles']
-hidden_posts: ['Python Compiler']
+hidden_posts: []
 
 # Build settings
 markdown: kramdown
