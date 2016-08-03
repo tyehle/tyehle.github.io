@@ -8,18 +8,18 @@ weight: 1
 Class Projects
 --------------
 
-- An implementation of Java style interfaces in a lisp like language
 - Most of a [Python compiler]({% post_url 2015-10-31-python_compiler %})
-- A regex matcher using derivatives in JavaScript
-- Character recognition on sheet music
-- ID3 decision trees
-- Neural nets with backprop training
-- SVM with various loss functions and SGD training
 - A [Dominion AI]({% post_url 2016-07-29-dominion %}) [[src](https://github.com/tyehle/dominion)]
-- An interesting sudoku solver
 - A question answering system
 - Clustering analysis of suicide cases
+- A regex matcher using derivatives in JavaScript
+- An implementation of Java style interfaces in a lisp like language
+- Character recognition on sheet music
+- An interesting sudoku solver
 - A dynamical friction simulation
+- Neural nets with backprop training
+- ID3 decision trees
+- SVM with various loss functions and SGD training
 
 Personal Projects
 -----------------
