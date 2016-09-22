@@ -1,0 +1,47 @@
+---
+layout: page
+---
+
+{{content}}
+
+<div id="lightgallery">
+  {% for photo in page.gallery.photos %}
+    <a href="{{photo.location}}" data-sub-html=".caption">
+      <div style="height: {% if photo.height %} {{photo.height}}; {% else %} {{page.gallery.height}}; {% endif %}
+                  width: {% if photo.width %} {{photo.width}}; {% else %} {{page.gallery.width}}; {% endif %}
+                  background-size: {% if photo.background-size %} {{photo.background-size}}; {% else %} cover; {% endif %}
+                  background-position: {% if photo.background-position %} {{photo.background-position}}; {% else %} center; {% endif %}
+                  background-image:url({{photo.location}});
+                  display: inline-block;
+                  margin: 0px;">
+        <div class="caption" style="display:none">
+          <h3>{{photo.title}}</h3>
+          {{photo.caption}}
+        </div>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/lightgallery.min.js"></script>
+
+<script src="js/lg-thumbnail.min.js"></script>
+<script src="js/lg-fullscreen.min.js"></script>
+<script src="js/lg-autoplay.min.js"></script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('#lightgallery').lightGallery({
+      thumbnail: true,
+      exThumbImage: 'href',
+      toogleThumb: true,
+      showThumbByDefault: true,
+      preload: 3,
+      download: false,
+      speed: 0,
+      autoplay: false,
+      subHtmlSelectorRelative: true
+    });
+  });
+</script>
