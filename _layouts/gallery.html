@@ -4,23 +4,26 @@ layout: page
 
 {{content}}
 
-<div id="lightgallery">
-  {% for photo in page.gallery.photos %}
-    <a href="{{photo.location}}" data-sub-html=".caption">
-      <div style="height: {% if photo.height %} {{photo.height}}; {% else %} {{page.gallery.height}}; {% endif %}
-                  width: {% if photo.width %} {{photo.width}}; {% else %} {{page.gallery.width}}; {% endif %}
+{% if page.gallery.margin %} {% assign default_margin = page.gallery.margin %} {% else %} {% assign default_margin = "0px;" %} {% endif %}
+
+<div id="lightgallery" style="line-height: 0; text-align: center;">
+  {% for photo in page.gallery.photos %}<a href="{{photo.location}}"
+                                           data-sub-html=".caption"
+                                           style="display: inline-block;
+                                                  margin: {% if photo.margin %} {{photo.margin}}; {% else %} {{default_margin}}; {% endif %}">
+      {% if photo.height %} {% assign height = photo.height %} {% else %} {% assign height = page.gallery.height %} {% endif %}
+      <div style="height: {{height}};
+                  width: {% if photo.width %} {{photo.width}}; {% elsif photo.width_from_height %} {{height | times: photo.width_from_height}}px; {% else %} {{page.gallery.width}}; {% endif %}
                   background-size: {% if photo.background-size %} {{photo.background-size}}; {% else %} cover; {% endif %}
                   background-position: {% if photo.background-position %} {{photo.background-position}}; {% else %} center; {% endif %}
                   background-image:url({{photo.location}});
-                  display: inline-block;
-                  margin: 0px;">
+                  display: inline-block;">
         <div class="caption" style="display:none">
           <h3>{{photo.title}}</h3>
           {{photo.caption}}
         </div>
       </div>
-    </a>
-  {% endfor %}
+    </a>{% endfor %}
 </div>
 
 <script src="js/jquery.min.js"></script>
@@ -33,14 +36,14 @@ layout: page
 <script type="text/javascript">
   $(document).ready(function() {
     $('#lightgallery').lightGallery({
+      preload: 3,
+      speed: 0,
+      download: false,
+      autoplay: false,
       thumbnail: true,
       exThumbImage: 'href',
       toogleThumb: true,
       showThumbByDefault: true,
-      preload: 3,
-      download: false,
-      speed: 0,
-      autoplay: false,
       subHtmlSelectorRelative: true
     });
   });
