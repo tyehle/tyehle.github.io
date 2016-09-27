@@ -18,5 +18,5 @@
 
   <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
 
-  {% if page.gallery %}<link type="text/css" rel="stylesheet" href="css/lightgallery.min.css"/>{% endif %}
+  {% if layout.require_lightgallery or page.require_lightgallery %}<link type="text/css" rel="stylesheet" href="css/lightgallery.min.css"/>{% endif %}
 </head>

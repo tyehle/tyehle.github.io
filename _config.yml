@@ -9,7 +9,7 @@
 title: Tobin Yehle
 email: tobin.yehle@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  This is my personal site containing personal projects and writing about 
+  This is my personal site containing personal projects and writing about
   things I find interesting.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://tobin.yehle.io" # the base hostname & protocol for your site
@@ -17,7 +17,7 @@ url: "http://tobin.yehle.io" # the base hostname & protocol for your site
 github_username:  tyehle
 bitbucket_username: tobinyehle
 
-nav_pages: ['Projects', 'Research', 'Articles']
+nav_pages: ['Projects', 'Research', 'Articles', 'Pottery']
 hidden_posts: []
 
 # Build settings
