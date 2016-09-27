@@ -1,0 +1,32 @@
+---
+layout: page
+require_lightgallery: true
+---
+
+{{ content }}
+
+<script type="text/javascript">
+  let galleryData = {{page.imgur | jsonify}};
+</script>
+
+<div id="lightGallery" style="line-height: 0;"></div>
+
+
+<script src="js/jquery.min.js"></script>
+
+<script src="js/lightgallery.min.js"></script>
+<script src="js/lg-thumbnail.min.js"></script>
+<script src="js/lg-fullscreen.min.js"></script>
+<script src="js/lg-autoplay.min.js"></script>
+
+<script src="js/album-finder.js"></script>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    imgurGallery(galleryData.clientID,
+                 galleryData.albumID,
+                 "lightGallery",
+                 galleryData.galleryOptions,
+                 galleryData.lightGalleryOptions);
+  });
+</script>

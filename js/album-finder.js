@@ -14,25 +14,41 @@ function getRateLimit(clientID, callback) {
 }
 
 // id should be "d9a8cf1ed42d1da"
-function buildGallery(clientID, albumID, containerID, galleryOptions, lightGalleryOptions) {
-  let defaultOptions = { thumbBuilder: defaultThumb,
+function imgurGallery(clientID, albumID, containerID, galleryOptions, lightGalleryOptions) {
+  let defaultOptions = { thumbBuilder: "defaultThumb",
                          margin: "0px",
                          thumbWidth: "184px",
                          thumbHeight: "230px",
-                         "background-size": "cover",
-                         "background-position": "center"
+                         backgroundSize: "cover",
+                         backgroundPosition: "center",
+                         containerAlign: "center"
                        };
+
+  let lgOptionsExtended = { preload: 3,
+                            speed: 0,
+                            download: false,
+                            autoplay: false,
+                            thumbnail: true,
+                            exThumbImage: 'href',
+                            toogleThumb: true,
+                            showThumbByDefault: true,
+                            subHtmlSelectorRelative: true
+                          }
+  $.extend(lgOptionsExtended, lightGalleryOptions);
+
 
   let globalOptions = defaultOptions;
   for(key in galleryOptions)
     if(key !== "photos")
       globalOptions[key] = galleryOptions[key];
 
+  document.getElementById(containerID).style.textAlign = globalOptions.containerAlign;
+
   // let url = "https://api.imgur.com/3/album/"+albumID+"/images";
   let url = "/sample-response.json";
   getURLWithAuthorization(clientID, url, function(response) {
     let album = JSON.parse(response);
-    galleryFromObject(album, globalOptions, galleryOptions.photos, containerID, lightGalleryOptions);
+    galleryFromObject(album, globalOptions, galleryOptions.photos, containerID, lgOptionsExtended);
   });
 }
 
@@ -42,7 +58,8 @@ function galleryFromObject(album, globalOptions, localOptions, containerID, ligh
   for(key in album.data) {
     let photo = album.data[key];
     $.extend(photo, globalOptions, localOptions[photo.id]);
-    frag.appendChild(photo.thumbBuilder(photo));
+    console.log("using builder: "+photo.thumbBuilder);
+    frag.appendChild(window[photo.thumbBuilder](photo));
   }
 
   let container = document.getElementById(containerID);
@@ -56,6 +73,7 @@ function galleryFromObject(album, globalOptions, localOptions, containerID, ligh
 }
 
 function defaultThumb(photo) {
+  console.log("url("+photo.link+")");
   let title = document.createElement("h3");
   title.textContent = photo.title;
 
@@ -70,9 +88,9 @@ function defaultThumb(photo) {
   let image = document.createElement("div");
   image.style.height = photo.thumbHeight;
   image.style.width = photo.thumbWidth;
-  image.style["background-size"] = photo["background-size"];
-  image.style["background-position"] = photo["background-position"];
-  image.style["background-image"] = "url("+photo.link+")";
+  image.style.backgroundSize = photo.backgroundSize;
+  image.style.backgroundPosition = photo.backgroundPosition;
+  image.style.backgroundImage = "url("+photo.link+")";
   image.style.display = "inline-block";
   image.appendChild(caption);
 
