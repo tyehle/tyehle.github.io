@@ -1,51 +1,38 @@
 ---
 layout: page
 require_lightgallery: true
+defaultOptions:
+  thumbBuilder: defaultThumb
+  margin: 0px
+  thumbWidth: 184px
+  thumbHeight: 230px
+  backgroundSize: cover
+  backgroundPosition: center
+  containerAlign: center
+  lightgalleryParams:
+    preload: 3
+    speed: 0
+    download: false
+    autoplay: false
+    thumbnail: true
+    exThumbImage: href
+    toogleThumb: true
+    showThumbByDefault: true
+    subHtmlSelectorRelative: true
 ---
 
-{{content}}
-
-{% if page.gallery.margin %} {% assign default_margin = page.gallery.margin %} {% else %} {% assign default_margin = "0px;" %} {% endif %}
-
-<div id="lightgallery" style="line-height: 0; text-align: center;">
-  {% for photo in page.gallery.photos %}<a href="{{photo.location}}"
-                                           data-sub-html=".caption"
-                                           style="display: inline-block;
-                                                  margin: {% if photo.margin %} {{photo.margin}}; {% else %} {{default_margin}}; {% endif %}">
-      {% if photo.height %} {% assign height = photo.height %} {% else %} {% assign height = page.gallery.height %} {% endif %}
-      <div style="height: {{height}};
-                  width: {% if photo.width %} {{photo.width}}; {% elsif photo.width_from_height %} {{height | times: photo.width_from_height}}px; {% else %} {{page.gallery.width}}; {% endif %}
-                  background-size: {% if photo.background-size %} {{photo.background-size}}; {% else %} cover; {% endif %}
-                  background-position: {% if photo.background-position %} {{photo.background-position}}; {% else %} center; {% endif %}
-                  background-image:url({{photo.location}});
-                  display: inline-block;">
-        <div class="caption" style="display:none">
-          <h3>{{photo.title}}</h3>
-          {{photo.caption}}
-        </div>
-      </div>
-    </a>{% endfor %}
-</div>
-
 <script src="js/jquery.min.js"></script>
-<script src="js/lightgallery.min.js"></script>
 
+<script src="js/lightgallery.min.js"></script>
 <script src="js/lg-thumbnail.min.js"></script>
 <script src="js/lg-fullscreen.min.js"></script>
 <script src="js/lg-autoplay.min.js"></script>
 
 <script type="text/javascript">
-  $(document).ready(function() {
-    $('#lightgallery').lightGallery({
-      preload: 3,
-      speed: 0,
-      download: false,
-      autoplay: false,
-      thumbnail: true,
-      exThumbImage: 'href',
-      toogleThumb: true,
-      showThumbByDefault: true,
-      subHtmlSelectorRelative: true
-    });
-  });
+  let defaultOptions = {{layout.defaultOptions | jsonify}};
+  let pageOptions = {{page.gallery | jsonify}};
+  // override layout with page options
+  let galleryData = $.extend(deep=true, {}, defaultOptions, pageOptions);
 </script>
+
+{{content}}

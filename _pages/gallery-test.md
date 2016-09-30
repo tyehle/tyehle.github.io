@@ -1,34 +1,31 @@
 ---
-layout: gallery
+layout: yaml-gallery
 title: Gallery Test
 permalink: /gallery-test
-published: false
+published: true
 gallery:
-  height: 230px
-  width: 184px
-  margin: .5px
   photos:
-  - location: https://imgur.com/PeMIMnJ.png
+  - link: https://imgur.com/PeMIMnJ.png
     title: Mission Accomplished
-    caption: The probe has touched down on Laythe, and is communicating with Kerbin.
-  - location: https://i.imgur.com/UFoOfZy.png
-    width_from_height: 1.6
+    description: The probe has touched down on Laythe, and is communicating with Kerbin.
+  - link: https://i.imgur.com/UFoOfZy.png
+    widthFromHeight: 1.6
     margin: .5px 1px
     title: Reentry
-    caption: The probe is entering the atmosphere of Laythe. Most of the heat shield is gone from the aerobraking maneuver around Jool. Will it make it?
-  - location: https://i.imgur.com/nW1LR3G.png
+    description: The probe is entering the atmosphere of Laythe. Most of the heat shield is gone from the aerobraking maneuver around Jool. Will it make it?
+  - link: https://i.imgur.com/nW1LR3G.png
     title: Ion Powered Glider
-    caption: A solar powered glider looking something like the B2, capable of flight at 20km.
-    background-position: 35% 50%
-  - location: http://i.imgur.com/hiljIys.png
+    description: A solar powered glider looking something like the B2, capable of flight at 20km.
+    backgroundPosition: 35% 50%
+  - link: http://i.imgur.com/hiljIys.png
     title: Orbital Station
-  - location: http://i.imgur.com/hVQMtLU.png
-  - location: http://i.imgur.com/cFlK5hW.png
-  - location: http://i.imgur.com/IzZ0lF7.png
-  - location: http://i.imgur.com/ObZfwfH.png
-  - location: http://i.imgur.com/9ip1arQ.jpg
-  - location: http://i.imgur.com/z9Cfw9E.jpg
-  - location: http://i.imgur.com/35GLaMN.jpg
-  - location: http://i.imgur.com/4Od6cVq.jpg
-  - location: http://i.imgur.com/uZtnvIZ.jpg
+  - link: http://i.imgur.com/hVQMtLU.png
+  - link: http://i.imgur.com/cFlK5hW.png
+  - link: http://i.imgur.com/IzZ0lF7.png
+  - link: http://i.imgur.com/ObZfwfH.png
+  - link: http://i.imgur.com/9ip1arQ.jpg
+  - link: http://i.imgur.com/z9Cfw9E.jpg
+  - link: http://i.imgur.com/35GLaMN.jpg
+  - link: http://i.imgur.com/4Od6cVq.jpg
+  - link: http://i.imgur.com/uZtnvIZ.jpg
 ---

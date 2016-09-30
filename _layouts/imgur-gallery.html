@@ -6,7 +6,7 @@ require_lightgallery: true
 {{ content }}
 
 <script type="text/javascript">
-  let galleryData = {{page.imgur | jsonify}};
+  let galleryData = {{page.gallery | jsonify}};
 </script>
 
 <div id="lightGallery" style="line-height: 0;"></div>
