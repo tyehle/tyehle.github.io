@@ -13,87 +13,61 @@ function getRateLimit(clientID, callback) {
   getURLWithAuthorization(clientID, "https://api.imgur.com/3/credits", callback);
 }
 
-function imgurGallery(clientID, albumID, containerID, galleryOptions, lightGalleryOptions) {
-  let defaultOptions = { thumbBuilder: "defaultThumb",
-                         margin: "0px",
-                         thumbWidth: "184px",
-                         thumbHeight: "230px",
-                         backgroundSize: "cover",
-                         backgroundPosition: "center",
-                         containerAlign: "center"
-                       };
-
-  let lgOptionsExtended = { preload: 3,
-                            speed: 0,
-                            download: false,
-                            autoplay: false,
-                            thumbnail: true,
-                            exThumbImage: "href",
-                            toogleThumb: true,
-                            showThumbByDefault: true,
-                            subHtmlSelectorRelative: true
-                          };
-  $.extend(lgOptionsExtended, lightGalleryOptions);
-
-
-  let globalOptions = defaultOptions;
-  for(let key in galleryOptions)
-    if(key !== "photos")
-      globalOptions[key] = galleryOptions[key];
-
-  document.getElementById(containerID).style.textAlign = globalOptions.containerAlign;
-
+function imgurGallery(pageData, containerID) {
   // let url = "https://api.imgur.com/3/album/"+albumID+"/images";
   let url = "/sample-response.json";
-  getURLWithAuthorization(clientID, url, function(response) {
-    let album = JSON.parse(response);
-    galleryFromObject(album, globalOptions, galleryOptions.photos, containerID, lgOptionsExtended);
+  getURLWithAuthorization(pageData.clientID, url, function(response) {
+    let albumPhotos = JSON.parse(response).data;
+
+    function indexOfPhotoWithID(id) {
+      for(let i in albumPhotos)
+        if(albumPhotos[i].id == id)
+          return i;
+      return null;
+    }
+
+    // merge page data into the response
+    for(let i in pageData.photos) {
+      let matching = indexOfPhotoWithID(pageData.photos[i].id);
+      if(matching) {
+        $.extend(true, albumPhotos[matching], pageData.photos[i]);
+      } else {
+        albumPhotos.push(pageData.photos[i]);
+      }
+    }
+
+    // update the page data
+    pageData.photos = albumPhotos;
+    galleryFromObject(pageData, containerID);
   });
 }
 
-function yamlGallery(album, containerID) {
-  let frag = document.createDocumentFragment();
+function galleryFromObject(album, containerID) {
+  $(document).ready(function() {
+    let frag = document.createDocumentFragment();
 
-  let defaultPhotoOptions = {};
-  for(let key in album)
-    if(key !== "photos" && key !== "lightGalleryParams")
-      defaultPhotoOptions[key] = album[key];
+    let defaultPhotoOptions = {};
+    for(let key in album)
+      if(key !== "photos" && key !== "lightGalleryParams")
+        defaultPhotoOptions[key] = album[key];
 
-  for(let key in album.photos) {
-    let photo = $.extend(true, {}, defaultPhotoOptions, album.photos[key]);
-    frag.appendChild(window[photo.thumbBuilder](photo));
-  }
+    for(let key in album.photos) {
+      let photo = $.extend(true, {}, defaultPhotoOptions, album.photos[key]);
+      frag.appendChild(window[photo.thumbBuilder](photo));
+    }
 
-  let container = document.getElementById(containerID);
-  if(container) {
-    container.style.textAlign = album.containerAlign;
-    container.appendChild(frag);
-  }
-  else {
-    console.error("Container with id "+containerID+" not found");
-  }
+    let container = document.getElementById(containerID);
+    if(container) {
+      container.style.textAlign = album.containerAlign;
+      container.appendChild(frag);
+    }
+    else {
+      console.error("Container with id "+containerID+" not found");
+    }
 
-  // call the lightgallery code with the jquery object
-  $("#"+containerID).lightGallery(album.lightgalleryParams);
-}
-
-function galleryFromObject(album, globalOptions, localOptions, containerID, lightGalleryOptions) {
-  let frag = document.createDocumentFragment();
-
-  for(let key in album.data) {
-    let photo = album.data[key];
-    $.extend(photo, globalOptions, localOptions[photo.id]);
-    frag.appendChild(window[photo.thumbBuilder](photo));
-  }
-
-  let container = document.getElementById(containerID);
-  if(container)
-    container.appendChild(frag);
-  else
-    console.error("Container with id "+containerID+" not found");
-
-  // call the lightgallery code (need the jquery object to call the code right)
-  $("#"+containerID).lightGallery(lightGalleryOptions);
+    // call the lightgallery code with the jquery object
+    $("#"+containerID).lightGallery(album.lightgalleryParams);
+  });
 }
 
 function defaultThumb(photo) {

@@ -1,32 +1,13 @@
 ---
-layout: page
-require_lightgallery: true
+layout: gallery
+defaultOptions:
+  margin: 0.5px
 ---
 
 {{ content }}
 
-<script type="text/javascript">
-  let galleryData = {{page.gallery | jsonify}};
-</script>
-
-<div id="lightGallery" style="line-height: 0;"></div>
-
-
-<script src="js/jquery.min.js"></script>
-
-<script src="js/lightgallery.min.js"></script>
-<script src="js/lg-thumbnail.min.js"></script>
-<script src="js/lg-fullscreen.min.js"></script>
-<script src="js/lg-autoplay.min.js"></script>
-
-<script src="js/album-finder.js"></script>
+<div id="lightgallery" style="line-height: 0"></div>
 
 <script type="text/javascript">
-  $(document).ready(function() {
-    imgurGallery(galleryData.clientID,
-                 galleryData.albumID,
-                 "lightGallery",
-                 galleryData.galleryOptions,
-                 galleryData.lightGalleryOptions);
-  });
+  imgurGallery(galleryData, containerID="lightgallery");
 </script>

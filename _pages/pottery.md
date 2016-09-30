@@ -6,15 +6,10 @@ weight: 4
 gallery:
   clientID: d9a8cf1ed42d1da
   albumID: nhtWX
-  galleryOptions:
-    containerAlign: center
-    thumbHeight: 230px
-    thumbWidth: 184px
-    margin: .5px
-    photos:
-      rHHV0wV:
-        title: First Cup
-        description: Leeches over Temmecu
-  lightGalleryOptions:
+  photos:
+  - id: rHHV0wV
+    title: First Cup
+    description: Leeches over Tenmoku
+  lightgalleryParams:
     toogleThumb: false
 ---
