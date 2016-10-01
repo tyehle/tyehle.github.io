@@ -2,7 +2,7 @@
 layout: yaml-gallery
 title: Gallery Test
 permalink: /gallery-test
-published: true
+published: false
 gallery:
   photos:
   - link: https://imgur.com/PeMIMnJ.png
