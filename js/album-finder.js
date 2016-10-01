@@ -14,8 +14,8 @@ function getRateLimit(clientID, callback) {
 }
 
 function imgurGallery(pageData, containerID) {
-  // let url = "https://api.imgur.com/3/album/"+albumID+"/images";
-  let url = "/sample-response.json";
+  let url = "https://api.imgur.com/3/album/"+pageData.albumID+"/images";
+  // let url = "/sample-response.json";
   getURLWithAuthorization(pageData.clientID, url, function(response) {
     let albumPhotos = JSON.parse(response).data;
 
@@ -53,7 +53,9 @@ function galleryFromObject(album, containerID) {
 
     for(let key in album.photos) {
       let photo = $.extend(true, {}, defaultPhotoOptions, album.photos[key]);
-      frag.appendChild(window[photo.thumbBuilder](photo));
+      let thumbBuilder = window[photo.thumbBuilder];
+      let captionBuilder = window[photo.captionBuilder];
+      frag.appendChild(thumbBuilder(photo, captionBuilder));
     }
 
     let container = document.getElementById(containerID);
@@ -70,17 +72,8 @@ function galleryFromObject(album, containerID) {
   });
 }
 
-function defaultThumb(photo) {
-  let title = document.createElement("h3");
-  title.textContent = photo.title;
-
-  let caption = document.createElement("div");
-  caption.className = "caption";
-  caption.style.display = "none";
-  caption.appendChild(title);
-  if(photo.description) {
-    caption.appendChild(document.createTextNode(photo.description));
-  }
+function defaultThumb(photo, captionBuilder) {
+  let caption = captionBuilder(photo);
 
   let image = document.createElement("div");
   image.style.height = photo.thumbHeight;
@@ -103,4 +96,46 @@ function defaultThumb(photo) {
   link.appendChild(image);
 
   return link;
+}
+
+function defaultCaption(photo) {
+  let title = document.createElement("h3");
+  title.textContent = photo.title;
+
+  let caption = document.createElement("div");
+  caption.className = "caption";
+  caption.style.display = "none";
+  caption.appendChild(title);
+  if(photo.description) {
+    caption.appendChild(document.createTextNode(photo.description));
+    caption.appendChild(document.createElement("br"));
+  }
+  if(photo.datetime) {
+    if(typeof photo.datetime == "string") {
+      // try parsing the date to get it into the standard format,
+      // but fall back on the string if that fails
+      let msec = Date.parse(photo.datetime);
+      if(isNaN(msec)) {
+        caption.appendChild(document.createTextNode(photo.datetime));
+      }
+      caption.appendChild(formatDate(msec));
+    } else if(typeof photo.datetime == "number") {
+      let msec = photo.datetime * 1000;
+      caption.appendChild(formatDate(msec));
+    } else {
+      console.error("Invalid date: "+photo.datetime);
+    }
+  }
+
+  return caption;
+}
+
+function formatDate(msec) {
+  let date = new Date(msec);
+  let months = ["January", "February", "March", "April", "May", "June", "July",
+                "August", "September", "October", "November", "December"];
+  let element = document.createElement("small");
+  let dateString = months[date.getMonth()] + " " + date.getFullYear();
+  element.appendChild(document.createTextNode(dateString));
+  return element;
 }
