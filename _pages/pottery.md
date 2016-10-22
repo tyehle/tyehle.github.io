@@ -25,10 +25,10 @@ gallery:
   - id: zqRx4sZ
     description: Luscious Orange Shino on the bottom. Heavy coat of red iron oxide to highlight the rolled grass. LB clay.
     datetime: July 2016
-  - id: Kjnk8cs
+  - id: RwpRN38
     description: Leeches over White Shino. LB clay with white slip.
     datetime: July 2016
-  - id: 9kyrij7
+  - id: xuz0Mt5
     description: Iron Tomato Red over Shig Black. LB clay with white slip.
     datetime: July 2016
   lightgalleryParams:
