@@ -36,6 +36,11 @@ function imgurGallery(pageData, containerID) {
       }
     }
 
+    // add the medium thum link to all photos
+    for(let key in albumPhotos) {
+      albumPhotos[key].thumb = albumPhotos[key].link.slice(0,-4) + "m" + albumPhotos[key].link.slice(-4);
+    }
+
     // update the page data
     pageData.photos = albumPhotos;
     galleryFromObject(pageData, containerID);
@@ -73,6 +78,9 @@ function galleryFromObject(album, containerID) {
 }
 
 function defaultThumb(photo, captionBuilder) {
+  // add the whole image if there is no thumb available
+  if(!photo.thumb) photo.thumb = photo.link;
+
   let caption = captionBuilder(photo);
 
   let image = document.createElement("div");
@@ -84,7 +92,7 @@ function defaultThumb(photo, captionBuilder) {
   image.style.width = photo.thumbWidth;
   image.style.backgroundSize = photo.backgroundSize;
   image.style.backgroundPosition = photo.backgroundPosition;
-  image.style.backgroundImage = "url("+photo.link+")";
+  image.style.backgroundImage = "url("+photo.thumb+")";
   image.style.display = "inline-block";
   image.appendChild(caption);
 
