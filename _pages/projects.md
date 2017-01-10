@@ -27,5 +27,5 @@ Personal Projects
 - A block game with a strange projection [[src](https://bitbucket.org/tobinyehle/fieldgame)]
 - Particle simulation [[src](https://bitbucket.org/tobinyehle/particles)]
 - A lame sudoku solver [[src](https://bitbucket.org/tobinyehle/sudoku-solver)]
-- Boggle solver [[src](https://bitbucket.org/tobinyehle/bogglesolver)]
+- [Boggle solver]({% post_url 2016-10-4-boggle %}) [[src](https://bitbucket.org/tobinyehle/bogglesolver)]
 - ASCII art generator [[src](https://bitbucket.org/tobinyehle/ascii-converter)]
