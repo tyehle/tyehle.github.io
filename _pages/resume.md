@@ -29,10 +29,10 @@ GPA: 3.95 / 4.0
 
 Experience
 ----------
-- 2015-2016: *Research Assistant, U of U* - Senior thesis research under Dr. Vivek Srikumar with funding from U of U Undergrad Research Opportunities program.
-- 2014-2015: *Teaching Assistant, U of U* - Machine Learning & Intro Computer Science.
-- 2014: *Research Assistant, FIT* - NSF funded Research Experience for Undergrads hosted by FIT resulting in publication.
-- 2012-2014: *Software Engineer, Fusion-io* - Build automation and QA automation.
+- **U of U** *Research Assistant*, 2015-2016 - Senior thesis research under Dr. Vivek Srikumar with funding from U of U Undergrad Research Opportunities program.
+- **U of U** *Teaching Assistant*, 2014-2015 - Machine Learning & Intro Computer Science.
+- **FIT** *Research Assistant*, 2014 - NSF funded Research Experience for Undergrads hosted by FIT resulting in publication.
+- **Fusion-io** *Software Engineer*, 2012-2014 - Build automation and QA automation.
 Administered a Jenkins server for automating builds over many distros.
 Contributed to a refactor of the test infrastructure.
 
@@ -107,6 +107,7 @@ Languages
 - C#
 - C++
 - bash
+- LaTeX
 - Elm
 
 

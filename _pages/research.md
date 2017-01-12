@@ -5,10 +5,16 @@ permalink: /research
 weight: 2
 ---
 
-I'm currently doing research in natural language parsing with [Dr. Vivek Srikumar](http://svivek.com).
+I did my undergrad thesis in natural language parsing with [Dr. Vivek Srikumar](http://svivek.com).
 In the past I have worked with [Dr. Ronaldo Menezes](http://cs.fit.edu/~rmenezes/Home.html) on complex networks.
 
 ***
+
+Thesis
+------
+
+- **Memoized Parsing with Derivatives**: Tobin Yehle (2016) [pdf](resources/thesis.pdf)
+
 
 Publications
 ------------
