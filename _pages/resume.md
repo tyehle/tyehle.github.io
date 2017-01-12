@@ -15,6 +15,7 @@ Contact
 Education
 ---------
 Honors BS University of Utah, Magna cum Laude
+
 - Major: Computer Science
 - Completed tracks in:
   - Programming Languages
@@ -91,7 +92,7 @@ Honors
 ------
 - 2016: Magna Cum Laude - Top 2.5% of College of Engineering
 - 2016: Undergrad Research Scholar - 2 Semesters of research, a publication, and a presentation
-- 2011-2016: Deans List - GPA > 3.5 for 12 credits of classes
+- 2011-2016: Deans List - GPA > 3.5 for 12 or more credits of classes
 - 2011-2015: Full scholarship - Tuition paid for up to 18 credits
 - 2011: Symantec CS Award - Award for high school project on genetic algorithms
 
