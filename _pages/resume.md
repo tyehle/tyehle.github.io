@@ -22,7 +22,7 @@ Honors BS University of Utah, Magna cum Laude
   - Artificial Intelligence
   - Information in Data
   - Theory
-- Minors: Astronomy, music
+- Minors: Astronomy, Music
 
 GPA: 3.95 / 4.0
 
