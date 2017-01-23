@@ -1,5 +1,5 @@
 ---
-layout: imgur-gallery
+layout: page
 title: Pottery
 permalink: /pottery
 weight: 4
@@ -35,6 +35,22 @@ gallery:
     datetime: October 2016
   - id: 9F2r1NT
     datetime: Oct 2016
+  - id: B3SIv2r
+    datetime: Oct 2016
+  - id: 6aibkdy
+    datetime: Oct 2016
+  - id: Zq7ZOrr
+    datetime: Oct 2016
+  - id: I4hTjWC
+    datetime: Oct 2016
+  - id: lvmW9sr
+    datetime: Oct 2016
+  - id: DX6Mfvs
+    datetime: Oct 2016
   lightgalleryParams:
     toogleThumb: false
 ---
+
+I take amazing and affordable classes taught at the [Red Kiln](http://www.redkiln.org/).
+
+<a data-flickr-embed="true" data-footer="true"  href="https://www.flickr.com/photos/147607901@N07/albums/72157678992097236" title="Pottery"><img src="https://c1.staticflickr.com/1/534/32249654052_0218db2b33_c.jpg" width="800" height="533" alt="Pottery"></a><script async src="//embedr.flickr.com/assets/client-code.js" charset="utf-8"></script>
