@@ -25,4 +25,7 @@ markdown: kramdown
 markdown_ext: markdown,mkdown,mkdn,mkd,md
 include: ['_pages']
 
+gems:
+ - jekyll-sitemap
+
 permalink: /articles/:title
