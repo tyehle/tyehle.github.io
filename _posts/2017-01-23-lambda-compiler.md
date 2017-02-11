@@ -30,16 +30,18 @@ Because many functions are implemented in the language itself, the grammar is mu
 
        |  <nat>
 
-       |  ([λ|lambda] (<arg> ...) <exp>)
+       |  (<lam> (<arg> ...) <exp>)
        |  (let ((<var> <exp>) ...) <exp>)
        |  (letrec (<var> <exp>) <exp>)
 
        |  (<exp> <exp> ...)
 
 <arg> ::= _ | <var>
+
+<lam> ::= λ | lambda
 ```
 
-`<arg>` its own form because I like using `_` as an ignored argument.
+`<arg>` is its own form because I like using `_` as an ignored argument.
 
 I added program, module and define forms to make it possible to do bootstrapping.
 
@@ -93,11 +95,12 @@ Base Definitions
 
 All the definitions of basic functions in the language are in [resources/base.lc](https://github.com/tyehle/lambda/blob/master/resources/base.lc)
 
-Most functions are the same as the desugarings implemented in [Matt Might's original post](http://matt.might.net/articles/compiling-up-to-lambda-calculus).
+All the desugarings implemented in [Matt Might's original post](http://matt.might.net/articles/compiling-up-to-lambda-calculus) that are missing from the compiler are there.
 
-There are some new ones
+There are also some new definitions that make actually writing programs a bit easier.
 
-### Basic Functions
+### Useful Functions
+
 ```racket
 (define (id x) x)
 (define (const x _) x)
@@ -110,6 +113,136 @@ There are some new ones
 `hang` is used to kill the program if `head` or `tail` is called on an empty list. Might seem a bit draconian, but I didn't implement errors or exceptions cause they're hard. So too bad.
 
 
+### Booleans
+
+The only additional boolean operation is `not`.
+
+```racket
+(define (not a)
+  (a #f #t))
+```
+
+
+### Numbers
+
+All things are done using [Church Numerals](https://en.wikipedia.org/wiki/Church_encoding#Church_numerals).
+
+The new numeric operations are defined as follows.
+
+
+```racket
+(define (even? n) (n not #t))
+```
+
+`even?` is its own function because a general remainder operator using repeated subtraction is (I think) less efficient.
+When the the number is evaluated it will apply `not` to `#t` n times.
+
+You may have noticed this will take at least linear time as opposed to constant time one would expect from a real programming language. This is because church numerals are slow and should never be used unless you like [office chair battles](https://xkcd.com/303/).
+
+
+```racket
+(define (/ n m)
+  (letrec (div1 (λ (n1 m1)
+                  (let ([diff (- n1 m1)])
+                    (if (zero? diff)
+                        0
+                        (succ (div1 diff m1))))))
+    (div1 (succ n) m)))
+```
+
+The division algorithm is repeated subtraction, and is described [on wikipedia](https://en.wikipedia.org/wiki/Church_encoding#Division).
+
+`div1` is fast (because it only does one subtraction each iteration), but it is not quite the division operator we want.
+
+`(div1 2 3) = 0` | as expected
+`(div1 3 3) = 0` | should be 1
+`(div1 4 3) = 1` | as expected
+
+To fix this problem we just need to add one to the input `n`. This fix would create problems with negative numbers, but there are no negative numbers in this language, so its all fine.
+
+
+```racket
+(define (mod n m)
+  (letrec (mod1 (λ (n1 m1)
+                  (let ([diff (- n1 m1)])
+                    (if (zero? diff)
+                        n1
+                        (mod1 diff m1)))))
+    (prev (mod1 (succ n) m))))
+```
+
+`mod` is the same algorithm as division, but instead of counting the number of iterations, we just return `n1`.
+
+The fix is much the same; just add 1 to the input. Since its the final value of the input we are interested in we then subtract one from the result.
+
+
+```racket
+(define (<= a b)
+  (zero? (- a b)))
+(define (>= a b)
+  (zero? (- b a)))
+(define (< a b)
+  (<= (+ 1 a) b))
+(define (> a b)
+  (>= a (+ 1 b)))
+```
+
+All the new comparison operations check if the result of a subtraction is zero.
+
+
+### Lists
+
+```racket
+(define (from n)
+  (cons n (from (succ n))))
+```
+
+`from` builds an infinite list starting at the given value. Since the interpreter is lazy this is not a problem.
+
+```racket
+(define (take n l)
+  (if (or (zero? n) (null? l))
+      empty
+      (cons (head l) (take (prev n) (tail l)))))
+```
+
+`take` results in a list containing the first n elements of the given list. It will return fewer than n items if the given list is not long enough.
+
+```racket
+(define (foldl fn acc xs)
+  (if (null? xs)
+      acc
+      (foldl fn (fn acc (head xs)) (tail xs))))
+
+(define (foldr fn acc xs)
+  (if (null? xs)
+      acc
+      (fn (head xs) (foldr fn acc (tail xs)))))
+
+(define (map f xs)
+  (if (null? xs)
+      xs
+      (cons (f (head xs)) (map f (tail xs)))))
+```
+
+Folds and maps work here like they do in every other language.
+
+The lazy interpreter allows the right fold to exit early.
+
+`(foldr (λ (e _) #t) #f (from 0))` will terminate, but the left fold version will not.
+
+```racket
+(define (range low high)
+  (if (>= low high)
+      empty
+      (cons low
+            (range (+ 1 low)
+                   high))))
+```
+
+This definition is just more efficient than `(take (- high low) (from low))` because church numerals suck.
+
+
 --------
 
 
@@ -119,56 +252,6 @@ Compiler
 The implementation of the compiler is the same except for the additional components.
 
 The y-combinator seems like magic to me, but I found [this answer](https://cs.stackexchange.com/a/9651) made a lot of sense.
-
-
-### Not
-
-`not` is easy to implement using `if`.
-
-```haskell
-compile (Not a) = compile $ If a VFalse VTrue
-```
-
-
-### Even
-
-I decided to make an `even?` function be its own syntactic form because there is an efficient implementation available for church numerals.
-
-A church numeral representing the number n is a function that takes some operation `f` and an argument `x` and returns `f` applied n times to `x`.
-
-We can use this definition to write `even?` as `(lambda (n) (n not #t))`.
-
-In the compiler this looks like this
-
-```haskell
-compile (IsEven a) = compile a `App` compile switch `App` true
-  where
-    switch = Lambda ["x"] $ If (Var "x") VFalse VTrue
-```
-
-You may have noticed this will take at least linear time as opposed to constant time one would expect from a real programming language. This is because church numerals are slow and should never be used unless you like [office chair battles](https://xkcd.com/303/).
-
-
-### Division
-
-The algorithm I used for division is repeated subtraction, and is described [on wikipedia](https://en.wikipedia.org/wiki/Church_encoding#Division).
-
-
-
-```haskell
-divide :: Node
-divide = Lam "n" $ Lam "m" $ compile (div1let (Var "n") (Var "m"))
-  where
-    -- (if (zero? diff) 0 (+ 1 (div1 diff m)))
-    body = If (IsZero (Var "diff"))
-              (Num 0)
-              (Plus (Num 1)
-                    (Var "div1" `Application` Var "diff" `Application` Var "m"))
-    -- (let ([diff (- n m)]) body)
-    minusBinding = Let [("diff", Minus (Var "n") (Var "m"))] body
-    div1let n m = Letrec ("div1", (["n", "m"], minusBinding))
-                         (Var "div1" `Application` Plus (Num 1) n `Application` m)
-```
 
 -----------
 
