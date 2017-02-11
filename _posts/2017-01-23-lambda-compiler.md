@@ -10,41 +10,43 @@ Instead of defining all the functions in the language in the compiler, I thought
 
 All code for the project can be found [on github](https://github.com/tyehle/lambda).
 
+### Sections
+{% include toc.html %}
+
 
 ------
 
 
 Parser
 ------
-Because many functions are implemented in the language itself, the grammar is much smaller.
+Because many functions are implemented in the language itself, the grammar quite small.
 
 ```
-<prg> ::= <def> ... <exp>
+<program> ::= <define> ... <exp>
 
-<mod> ::= <def> ...
+<module>  ::= <define> ...
 
-<def> ::= (define <var> <exp>)
-       |  (define (<var> <arg> ...) <exp>)
+<define>  ::= (define <var> <exp>)
+           |  (define (<var> <arg> ...) <exp>)
 
-<exp> ::= <var>
+<exp>     ::= <var>
 
-       |  <nat>
+           |  <nat>
 
-       |  (<lam> (<arg> ...) <exp>)
-       |  (let ((<var> <exp>) ...) <exp>)
-       |  (letrec (<var> <exp>) <exp>)
+           |  (<lam> (<arg> ...) <exp>)
+           |  (let ((<var> <exp>) ...) <exp>)
+           |  (letrec (<var> <exp>) <exp>)
 
-       |  (<exp> <exp> ...)
+           |  (<exp> <exp> ...)
 
-<arg> ::= _ | <var>
+<arg>     ::= _ | <var>
 
-<lam> ::= λ | lambda
+<lam>     ::= λ | lambda
 ```
 
 `<arg>` is its own form because I like using `_` as an ignored argument.
 
-I added program, module and define forms to make it possible to do bootstrapping.
-
+I added `program`, `module` and `define` forms to make it possible to do bootstrapping.
 
 
 I used [parsec](https://hackage.haskell.org/package/parsec) to get the grammar into this data structure.
@@ -82,7 +84,9 @@ lexParse :: Parser a -> String -> String -> Either String a
 lexParse p name input = first show $ parse commentP name input >>= parse p name
 ```
 
-This will result in a `Left` with the shown version of the `ParseError` if the parser fails.
+I had never used [bifunctors]() before, but it sure made handling `Either` easier.
+
+This will result in a `Left` with the shown version of the `ParseError` if the parser fails. Throughout the project I used `Left String` to represent error.
 
 Every stage of the compiler has the type `a -> Either String b` so it can all be strung together with bind.
 
@@ -95,7 +99,7 @@ Base Definitions
 
 All the definitions of basic functions in the language are in [resources/base.lc](https://github.com/tyehle/lambda/blob/master/resources/base.lc)
 
-All the desugarings implemented in [Matt Might's original post](http://matt.might.net/articles/compiling-up-to-lambda-calculus) that are missing from the compiler are there.
+All the desugarings implemented in [Matt Might's post](http://matt.might.net/articles/compiling-up-to-lambda-calculus) that are missing from the compiler are there.
 
 There are also some new definitions that make actually writing programs a bit easier.
 
@@ -108,12 +112,16 @@ There are also some new definitions that make actually writing programs a bit ea
   ((λ (u) (u u)) (λ (u) (u u))))
 ```
 
-`const` will work as expected because the interpreter is lazy. `(const x hang)` won't evaluate the second argument, so it won't hang.
+`const` will work the same as in Haskell because the interpreter is lazy. `(const x hang)` won't evaluate the second argument, so it won't hang.
 
 `hang` is used to kill the program if `head` or `tail` is called on an empty list. Might seem a bit draconian, but I didn't implement errors or exceptions cause they're hard. So too bad.
 
 
 ### Booleans
+
+All booleans are [church encoded](https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans).
+
+Since the interpreter is lazy `if` can be safely represented as a function because the branch that is not taken will never be evaluated.
 
 The only additional boolean operation is `not`.
 
@@ -123,9 +131,18 @@ The only additional boolean operation is `not`.
 ```
 
 
-### Numbers
+### Church Numerals
 
 All things are done using [Church Numerals](https://en.wikipedia.org/wiki/Church_encoding#Church_numerals).
+
+A church numeral is a function that takes two arguments: an operation to perform `f` and an object to operate on `x`. For the church numeral n, the operation is done n times to `x`. For example
+
+1 | = | `(λ (f x) (f x))`
+0 | = | `(λ (f x) x)`
+3 | = | `(λ (f x) (f (f (f x))))`
+
+
+### Numeric Operations
 
 The new numeric operations are defined as follows.
 
@@ -249,7 +266,24 @@ This definition is just more efficient than `(take (- high low) (from low))` bec
 Compiler
 --------
 
-The implementation of the compiler is the same except for the additional components.
+The purpose of the compiler is to transform the high level AST into one that represents the pure lambda calculus. The target structure is
+
+```haskell
+data Node = Lam String Node
+          | Ref String
+          | App Node Node
+          deriving (Show, Eq)
+```
+
+### Scope and Free Variables
+
+### Define
+
+### Multi-argument Lambdas
+
+### Let
+
+### Letrec
 
 The y-combinator seems like magic to me, but I found [this answer](https://cs.stackexchange.com/a/9651) made a lot of sense.
 
