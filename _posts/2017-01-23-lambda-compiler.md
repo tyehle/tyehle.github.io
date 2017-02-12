@@ -275,7 +275,8 @@ data Node = Lam String Node
           deriving (Show, Eq)
 ```
 
-### Scope
+
+### Scope and Free Variables
 
 There are a bunch of places in the compiler and interpreter where knowing which variables will be referenced later is important.
 
@@ -330,15 +331,95 @@ instance Scope Exp where
 
 ### Define
 
+The define forms desugar to a series of `let` or `letrec` expressions.
+
+```haskell
+desugarDefs :: [Definition] -> Program -> Exp
+desugarDefs baseDefs (Program defs expr) = desugarProgram newProg
+  where
+    newProg = Program (baseDefs ++ defs) expr
+
+desugarProgram :: Program -> Exp
+desugarProgram (Program ds e) = foldr defToLet e ds
+  where
+    defToLet (Def name expr) body = if isFree name body
+                                    then if isFree name expr
+                                         then Letrec name expr body
+                                         else Let [(name, expr)] body
+                                    else body
+```
+
+`desugarDefs` integrates the definitions of a module into those of a program.
+
+`desugarProgram` only let-binds a definition if it is used, and then only does a `letrec` if the name being defined is free in its definition. Otherwise it desugars to the much simpler `let` form.
+
+After this stage the program is represented as a single expression.
+
+
 ### Multi-argument Lambdas
+
+The lambda form of the high level AST accepts multiple arguments. The lambda calculus only has single argument lambdas, so they need to be curried.
+
+```haskell
+compileExp (Lambda args body) = foldr Lam (compileExp body) args
+```
+
+This will change an expression like `(λ (x y z) body)` to `(λ (x) (λ (y) (λ (z) body)))`.
+
+Function application is already curried by the parser, so there is nothing to fix up there.
 
 ### Let
 
+A `let` is changed into an immediately applied lambda.
+
+- `(let ([x 5]) (+ x 3))` becomes `((λ (x) (+ x 3)) 5)`
+- `(let ([x a] [y b]) body)` becomes `((λ (x) ((λ (y) body) b)) a)`
+
+```haskell
+compileExp (Let [] body) = compileExp body
+compileExp (Let ((n,v):rest) body) = Lam n inner `App` compileExp v
+  where
+    inner = compileExp (Let rest body)
+```
+
 ### Letrec
 
-The y-combinator seems like magic to me, but I found [this answer](https://cs.stackexchange.com/a/9651) made a lot of sense.
+To understand how the Y combinator allows recursion, it is sufficient to know that it is a function with the property `(Y G) = (G (Y G))`.
 
-### Scope and Free Variables
+I'll run through a quick example of defining a function `F` as some an arbitrary expression `exp` that can call `F`.
+The only way to bring a variable into scope is using lambda, so we might as well start there.
+
+`(λ (F) exp)`
+
+We can then use `Y` to get a definition for `F`.
+
+`(Y (λ (F) exp))` expands to `((λ (F) exp) (Y (λ (F) exp)))` in the same way that `(Y G)` expands to `(G (Y G))`. We can then go ahead and evaluate `exp` with `F` bound to `(Y (λ (F) exp))`. If ever `F` is called inside `exp`, the Y combinator will expand again to produce another definition of `F` to call "recursively".
+
+The feeling I get about the Y combinator is this. Every time you try to evaluate `(Y G)` it expands to `(G (Y G))`, allowing you to continue a recursive computation in `G` for as long as you wish. From the interpreter's perspective its not really recursion, its just expanding a copy of the same function definition as many times as necessary.
+
+In the terms of the `(λ (F) exp)` example `(letrec (F exp) body)` is equivalent to `(let ([F (Y (λ (F) exp))]) body)`
+
+My first thought when I saw this was: Hang on! The `F` bound in that let and the `F` in the definition aren't the same. That's variable shadowing!
+
+And this is true from the standpoint of the interpreter, but the property of the Y combinator means that the two definitions of `F` are equivalent. Which is why it is a definition of recursion without recursion.
+
+Here is the implementation in the compiler. The definition of the Y combinator still seems a bit like devil magic to me, but I thought [this answer](https://cs.stackexchange.com/a/9651) and [Matt Might's post](http://matt.might.net/articles/implementation-of-recursive-fixed-point-y-combinator-in-javascript-for-memoization/) made a lot of sense.
+
+```haskell
+compileExp (Letrec name binding body) = compileExp recursiveLet
+  where
+    recursiveLet = Let [(name, y `Application` Lambda [name] binding)] body
+
+-- (λy.λF.F (λx.y y F x))(λy.λF.F (λx.y y F x))
+y :: Exp
+y = term `Application` term
+  where
+    term = Lambda ["y", "F"] $ Var "F" `Application` Lambda ["x"] innerApp
+    innerApp = Var "y" `Application`
+               Var "y" `Application`
+               Var "F" `Application`
+               Var "x"
+```
 
 
 -----------
