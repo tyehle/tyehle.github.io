@@ -135,11 +135,11 @@ The only additional boolean operation is `not`.
 
 All things are done using [Church Numerals](https://en.wikipedia.org/wiki/Church_encoding#Church_numerals).
 
-A church numeral is a function that takes two arguments: an operation to perform `f` and an object to operate on `x`. For the church numeral n, the operation is done n times to `x`. For example
+A church numeral is a function that takes two arguments: an operation to perform `f` and an object to operate on `x`. For the church numeral n, the operation is done n times to `x`.
 
-1 | = | `(λ (f x) (f x))`
-0 | = | `(λ (f x) x)`
-3 | = | `(λ (f x) (f (f (f x))))`
+- 1 = `(λ (f x) (f x))`
+- 0 = `(λ (f x) x)`
+- 3 = `(λ (f x) (f (f (f x))))`
 
 
 ### Numeric Operations
@@ -171,9 +171,9 @@ The division algorithm is repeated subtraction, and is described [on wikipedia](
 
 `div1` is fast (because it only does one subtraction each iteration), but it is not quite the division operator we want.
 
-`(div1 2 3) = 0` | as expected
-`(div1 3 3) = 0` | should be 1
-`(div1 4 3) = 1` | as expected
+- `(div1 2 3) = 0` as expected
+- `(div1 4 3) = 1` as expected
+- `(div1 3 3) = 0`, but should be 1
 
 To fix this problem we just need to add one to the input `n`. This fix would create problems with negative numbers, but there are no negative numbers in this language, so its all fine.
 
@@ -275,7 +275,58 @@ data Node = Lam String Node
           deriving (Show, Eq)
 ```
 
-### Scope and Free Variables
+### Scope
+
+There are a bunch of places in the compiler and interpreter where knowing which variables will be referenced later is important.
+
+Any variable that has no binding is considered free.
+
+- `(λ (x) (f x))` -- `f` is free and `x` is bound
+- `(λ (y) (λ (x) (y x)))` -- `x` and `y` are both bound
+- `((λ (x) x) x)` -- `x` is  bound inside the lambda but free outside
+
+The compiler needs to know which variables are free to determine which definitions can be dropped, and the interpreter needs to know which variables are free to handle closures properly.
+
+Both the `Node` and `Exp` structures need a `freeVars` function, so they implement a typeclass.
+
+```haskell
+class Scope a where
+  freeVars :: a -> Set String
+```
+
+This allows a convenient function for guards in the compiler and interpreter.
+
+```haskell
+isFree :: Scope e => String -> e -> Bool
+isFree name expr = name `Set.member` freeVars expr
+```
+
+For the `Node` structure, `Lam` is the only way to bind a variable, and `Ref` is the only way to reference one.
+
+```haskell
+instance Scope Node where
+  freeVars (Lam arg body) = Set.delete arg $ freeVars body
+  freeVars (Ref name) = Set.singleton name
+  freeVars (App f x) = freeVars f `Set.union` freeVars x
+```
+
+For `Exp`, variables can be bound by `Lambda`, `Let` or `Letrec`, and referenced by `Var`.
+
+```haskell
+instance Scope Exp where
+  freeVars (Var name) = Set.singleton name
+  freeVars (Lambda args body) = freeVars body `removeAll` args
+  freeVars (Let bindings body) = foldr addBindingVars bodyVars bindings
+    where
+      addBindingVars = Set.union . freeVars . snd
+      bodyVars = freeVars body `removeAll` map fst bindings
+  freeVars (Letrec name binding body) = Set.delete name allVars
+    where
+      allVars = freeVars binding `Set.union` freeVars body
+  freeVars (Num _) = Set.empty
+  freeVars (Application f x) = freeVars f `Set.union` freeVars x
+```
+
 
 ### Define
 
@@ -286,6 +337,9 @@ data Node = Lam String Node
 ### Letrec
 
 The y-combinator seems like magic to me, but I found [this answer](https://cs.stackexchange.com/a/9651) made a lot of sense.
+
+### Scope and Free Variables
+
 
 -----------
 
