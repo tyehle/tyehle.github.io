@@ -97,9 +97,9 @@ Every stage of the compiler has the type `a -> Either String b` so it can all be
 Base Definitions
 ----------------
 
-All the definitions of basic functions in the language are in [resources/base.lc](https://github.com/tyehle/lambda/blob/master/resources/base.lc)
+The bootstrapped definitions of basic functions in the language are in [resources/base.lc](https://github.com/tyehle/lambda/blob/master/resources/base.lc).
 
-All the desugarings implemented in [Matt Might's post](http://matt.might.net/articles/compiling-up-to-lambda-calculus) that are missing from the compiler are there.
+All the desugarings implemented in [Matt Might's post](http://matt.might.net/articles/compiling-up-to-lambda-calculus) that are missing from the compiler are here.
 
 There are also some new definitions that make actually writing programs a bit easier.
 
@@ -119,11 +119,19 @@ There are also some new definitions that make actually writing programs a bit ea
 
 ### Booleans
 
-All booleans are [church encoded](https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans).
+All booleans are [church encoded](https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans). Church booleans are functions that take two arguments; what to do if its true, and what to do if its false.
+
+- true = `(λ (t f) t)`
+- false = `(λ (t f) f)`
 
 Since the interpreter is lazy `if` can be safely represented as a function because the branch that is not taken will never be evaluated.
 
-The only additional boolean operation is `not`.
+```racket
+(define (if c t f)
+  (c t f))
+```
+
+All other boolean operations can be defined in a similar way, eg. `not`.
 
 ```racket
 (define (not a)
@@ -209,6 +217,32 @@ All the new comparison operations check if the result of a subtraction is zero.
 
 ### Lists
 
+Church encoded lists are similar to booleans. They are functions that take a thing to do if the list is a pair, and a thing to do if the list is empty. If the list is a pair then the function is given two arguments, the head and the tail. If the list is empty then the function is called with the identity function.
+
+```racket
+(define (cons h t)
+  (λ (f _) (f h t)))
+(define empty
+  (λ (_ e) (e id)))
+```
+
+Using these definitions we can define common list operations, some of which I have listed below.
+
+```racket
+(define (head l)
+  (l (λ (h _) h) hang))
+(define (tail l)
+  (l (λ (_ t) t) hang))
+(define (pair? l)
+  (l (λ (_ _) #t) (const #f)))
+(define (null? l)
+  (l (λ (_ _) #f) (const #t)))
+```
+
+As I said earlier, `head` and `tail` will hang if called on the empty list because there isn't anything else we could reasonably do.
+
+`pair?` and `null?` never evaluate the contents of the list, so a program like `(pair? (cons hang hang))` will still terminate.
+
 ```racket
 (define (from n)
   (cons n (from (succ n))))
@@ -235,18 +269,13 @@ All the new comparison operations check if the result of a subtraction is zero.
   (if (null? xs)
       acc
       (fn (head xs) (foldr fn acc (tail xs)))))
-
-(define (map f xs)
-  (if (null? xs)
-      xs
-      (cons (f (head xs)) (map f (tail xs)))))
 ```
 
-Folds and maps work here like they do in every other language.
+Folds work here like they do in every other language.
 
 The lazy interpreter allows the right fold to exit early.
 
-`(foldr (λ (e _) #t) #f (from 0))` will terminate, but the left fold version will not.
+A right fold that gets the first element if it exists, `(foldr (λ (e _) #t) #f (from 0))`, will terminate, but the left fold version will not.
 
 ```racket
 (define (range low high)
@@ -259,6 +288,7 @@ The lazy interpreter allows the right fold to exit early.
 
 This definition is just more efficient than `(take (- high low) (from low))` because church numerals suck.
 
+All the other language features must be implemented by the compiler.
 
 --------
 
@@ -356,7 +386,21 @@ desugarProgram (Program ds e) = foldr defToLet e ds
 After this stage the program is represented as a single expression.
 
 
-### Multi-argument Lambdas
+### Easy Prey: Variables, Application and Numbers
+
+References and applications have a one-to-one mapping. Numbers become repeated function application.
+
+```haskell
+compileExp (Var name) = Ref name
+compileExp (Application a b) = compileExp a `App` compileExp b
+compileExp (Num n) = churchNum n
+
+churchNum :: Int -> Node
+churchNum n = Lam "f" $ Lam "x" $ foldr App (Ref "x") $ replicate n (Ref "f")
+```
+
+
+### Multi-Argument Lambdas
 
 The lambda form of the high level AST accepts multiple arguments. The lambda calculus only has single argument lambdas, so they need to be curried.
 
