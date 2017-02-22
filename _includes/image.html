@@ -3,13 +3,13 @@
     {% if include.url %}
         <a href="{{ include.url }}" title="{{ include.title }}" target="_blank">
     {% endif %}
-    
-    <img class="image" src="{{ include.img }}" {% if include.title %} alt="{{ include.title }}" {% endif %} />
-    
+
+    <img class="image" src="{{ include.img }}" alt="{{ include.title }}"/>
+
     {% if include.url %}
         </a>
     {% endif %}
-    
+
     {% if include.caption %}
         <p class="image-caption">{{ include.caption }}</p>
     {% endif %}

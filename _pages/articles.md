@@ -11,8 +11,9 @@ This is a list of bits of code or pieces of information I found useful or intere
 
 <ul class="post-list">
 {% for post in site.posts %}
-  {% if site.hidden_posts contains post.title %}
-  	<!-- Do not show hidden posts -->
+  {% capture short_name %}{{ post.id | remove_first: "/articles/" }}{% endcapture %}
+  {% if site.unlisted_posts contains post.title or site.unlisted_posts contains short_name %}
+    <!-- Do not show hidden posts -->
   {% else %}
     <li>
       <span class="post-meta">{{ post.date | date: "%b %-d, %Y" }}</span>
