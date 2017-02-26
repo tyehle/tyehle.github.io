@@ -13,6 +13,7 @@ description: > # this means to ignore newlines until "baseurl:"
   things I find interesting.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://tobin.yehle.io" # the base hostname & protocol for your site
+repository: tyehle/tyehle.github.io
 # twitter_username:
 github_username:  tyehle
 bitbucket_username: tobinyehle
@@ -24,8 +25,5 @@ unlisted_posts: []
 markdown: kramdown
 markdown_ext: markdown,mkdown,mkdn,mkd,md
 include: ['_pages']
-
-gems:
- - jekyll-sitemap
 
 permalink: /articles/:title
