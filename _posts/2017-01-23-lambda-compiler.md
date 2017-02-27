@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Compiling and Interpreting the Lambda Calculus in Haskell
-published: false
+published: true
 ---
 
 This whole project is based on [this post by Matt Might](http://matt.might.net/articles/compiling-up-to-lambda-calculus). I decided I would try to implement it in Haskell instead of Racket. There are several steps of the process that are missed because they are built into the Racket language. In my implementation I needed a parser, an interpreter, and an extractor, in addition to a reimplementation of the compiler.
@@ -753,7 +753,7 @@ The type `forall s a. ST s a -> a` could unify to `ST s (Result s) -> Result s`.
 
 The type `forall a. (forall s. ST s a) -> a` cannot unify to `ST s (Result s) -> Result s` because the type variable `s` is not in scope on the right side of the function. This ensures that no references to the state thread escape.
 
-Unfortunately types of this form are beyond Haskell's type inference engine. There is a special type rule for `$` that allows code like `runST $ do {...}`. The function for extracting lists requires `s` in its type signature, and the additional powers of the `$` operator are not enough to make the type checker succeed.
+Types of this form are beyond Haskell's type inference engine. There is a special type rule for `$` that allows code like `runST $ do {...}`. Unfortunately, the function for extracting lists requires `s` in its type signature, and the additional powers of the `$` operator are not enough to make the type checker succeed.
 
 To make this code work, I enabled the `{-# LANGUAGE Rank2Types #-}` extension. This allows all the extraction functions to have types that match the rest of the pipeline.
 
@@ -781,3 +781,110 @@ To interpret and extract an int from a compiled program you could now call `extr
 
 Tying it all Together
 ---------------------
+
+Each piece of the pipeline transforms the program until it is a Haskell literal. The following example shows how each piece fits together by following a simple program through each stage.
+
+### The Pieces
+
+Start with the input program `(cons #t empty)`.
+
+Parse the program to get:
+
+```
+Program [] (Application (Application (Var "cons") (Var "#t")) (Var "empty"))
+```
+
+The internal data structures aren't very easy to read, so the rest of this is in nicer notation.
+
+Desugar the program form to a single expression.
+
+```
+(let ([#t (λ (t f) t)])
+  (let ([cons (λ (h t)
+                (λ (f _)
+                  ((f h) t)))])
+    (let ([empty (λ (_ e) e)])
+      (cons #t empty))))
+```
+
+Compile the program to the lambda calculus.
+
+```
+(λ#t.(λcons.(λempty.cons #t empty)
+            (λ_.λe.e))
+     (λh.λt.λf.λ_.f h t))
+(λt.λf.t)
+```
+
+Interpret the program to get a closure.
+
+```raw
+{λf.λ_.f h t, [t={λ_.λe.e,[]}, h={λt.λf.t,[]}]}
+```
+
+Extract a pair from the closure.
+
+```
+< {λt.λf.t,[]} x {λ_.λe.e,[]} >
+```
+
+Finally, extract a list from the pair.
+
+```
+[True]
+```
+
+### The Interface
+
+I wanted to run programs from strings, and from files in the repl. I also wanted to interpret a program and pretty print the resulting lambda. `runProgram`, `runFile` and `prettyProgram` are the functions that do these things. `runDisplayProgram` contains all the common code between them.
+
+```haskell
+type Interp a = Node -> Either String a
+
+runDisplayProgram :: (a -> IO ()) -> String -> String -> Interp a -> IO ()
+runDisplayProgram display filename input extractor = do
+  base <- readBase
+  either putStrLn display $ do
+    defs <- base
+    prog <- parseProgram filename input
+    compiled <- compile defs prog
+    extractor compiled
+
+prettyProgram :: String -> IO ()
+prettyProgram prog = runDisplayProgram (putStrLn . pretty) "input" prog interp
+
+runProgram :: Show a => String -> Interp a -> IO ()
+runProgram = runDisplayProgram print "input"
+
+runFile :: Show a => String -> Interp a -> IO ()
+runFile filename extractor = do
+  input <- readFile filename
+  runDisplayProgram print filename input extractor
+```
+
+The outer `do` in `runDisplayProgram` is for the `IO` monad. The inner one is for `Either`. To run the whole pipeline, first grab the base definitions while in `IO`, then drop into `Either`. Grab the base definitions, then parse the input, then compile the base definitions and the program together, and finally run the interpreter.
+
+My original goal when writing this was to run the [collatz sequence](https://xkcd.com/710/).
+
+```racket
+(define (step n)
+  (if (even? n)
+      (/ n 2)
+      (+ (* n 3) 1)))
+
+(define (collatz n)
+  (if (<= n 1)
+      0
+      (+ 1 (collatz (step n)))))
+
+(map collatz (range 1 15))
+```
+
+Save that to resources/collatz.lc, then run with
+
+```
+λ> runFile "resources/collatz.lc" (extractList intExtractor)
+[0,1,7,2,5,8,16,3,19,6,14,9,9,17]
+```
+
+Tada! Those are the stopping times for the numbers 1 to 15.
