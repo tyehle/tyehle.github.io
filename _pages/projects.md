@@ -24,6 +24,7 @@ Class Projects
 Personal Projects
 -----------------
 
+- A [compiler from scheme to the λ-calculus]({% post_url 2017-01-23-lambda-compiler %})[[src](https://github.com/tyehle/lambda)]
 - A block game with a strange projection [[src](https://bitbucket.org/tobinyehle/fieldgame)]
 - Particle simulation [[src](https://bitbucket.org/tobinyehle/particles)]
 - A lame sudoku solver [[src](https://bitbucket.org/tobinyehle/sudoku-solver)]
