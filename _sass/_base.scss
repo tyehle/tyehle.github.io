@@ -122,6 +122,8 @@ hr {
 
     text-align: center;
 
+    overflow: visible;
+
     &:after {
         content: '//';
         display: inline-block;
