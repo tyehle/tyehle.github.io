@@ -5,9 +5,8 @@ title: About Me
 
 {% include image.html img="resources/portrait.jpg" %}
 
+I work at 3M HIS as a data plumber in the data science lab.
 
-I recently graduated from the University of Utah with my bachelors in Computer Science. My areas of interest are machine learning, natural language processing, and programming languages.
+I enjoy functional programming, compilers, distributed systesm, and machine learning.
 
-When I was there I worked with [Dr. Vivek Srikumar](http://svivek.com) in natural language processing, and played principal trumpet with the [Utah Philharmonia](http://music.utah.edu/ensembles/orchestras/philharmonia.php).
-
-My other interests include climbing, hiking, biking, skiing and [pottery](pottery).
+I also sometimes play trumpet with the [Salt Lake Symphony](http://www.saltlakesymphony.org/), climb, hike, bike, ski, and make [pottery](pottery).
