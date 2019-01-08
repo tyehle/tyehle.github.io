@@ -27,3 +27,6 @@ markdown_ext: markdown,mkdown,mkdn,mkd,md
 include: ['_pages']
 
 permalink: /articles/:title
+
+plugins:
+  - jekyll-sitemap
