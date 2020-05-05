@@ -14,28 +14,33 @@ This is a categorized list of much of the software I have worked on. Some things
 
 Functional Programming
 ----------------------
-- A compiler for a simple language with lambdas and a garbage collector using LLVM [[src](https://github.com/tyehle/llvm-lambda)]
-- A [compiler from scheme to the λ-calculus]({% post_url 2017-01-23-lambda-compiler %})[[src](https://github.com/tyehle/lambda)]
+- A compiler for a simple language with lambdas and a garbage collector using LLVM [ [source](https://github.com/tyehle/llvm-lambda) ]
+- A [compiler from scheme to the λ-calculus]({% post_url 2017-01-23-lambda-compiler %}) [ [source](https://github.com/tyehle/lambda) ]
 - Most of a [Python compiler]({% post_url 2015-10-31-python_compiler %}). This project was for a compilers class, and we implemented a lexer, parser, desugarer, and normalizer.
-- A [Dominion AI]({% post_url 2016-07-29-dominion %}) [[src](https://github.com/tyehle/dominion)]
-- An interesting sudoku solver in Haskell [[src](https://github.com/tyehle/sudoku)]
+- A [Dominion AI]({% post_url 2016-07-29-dominion %}) [ [source](https://github.com/tyehle/dominion) ]
+- An interesting sudoku solver in Haskell [ [source](https://github.com/tyehle/sudoku) ]
 - An implementation of Java style interfaces in an interpreted lisp-like language
 - A regex matcher using derivatives in JavaScript
 
 
 ---
 
-Graphics
+Hardware
 --------
-- A 3D engine with a nonlinear projection, written in Rust and OpenGL [[src](https://github.com/tyehle/fieldgame-rust)]
-- A prototype version of the 3D engine written in pure scala with a demo game on top [[src](https://github.com/tyehle/fieldgame)]
-- An ASCII art generator [[src](https://bitbucket.org/tobinyehle/ascii-converter)]
+- An LED matrix prototyping panel for [ [source](https://github.com/tyehle/led-matrix/blob/master/led-panel/README.md) ]
+- A dance detector [ [source](https://github.com/tyehle/dance-detector) ]
+- A touch sensative necklace pendant [ [source](https://github.com/tyehle/touch-circuit/tree/master/touch-circuit-v1) ]
+- A half adder using resistor-transistor logic [ [source](https://github.com/tyehle/rtl-half-adder) ]
+- A sunrise alarm clock [ [source](https://github.com/tyehle/sunrise) ]
 
 
 ---
 
-Hardware
+Graphics
 --------
+- A 3D engine with a nonlinear projection, written in Rust and OpenGL [ [source](https://github.com/tyehle/fieldgame-rust) ]
+- A prototype version of the 3D engine written in pure scala with a demo game on top [ [source](https://github.com/tyehle/fieldgame) ]
+- An ASCII art generator [ [source](https://bitbucket.org/tobinyehle/ascii-converter) ]
 
 
 ---
@@ -50,39 +55,39 @@ Data Engineering
 
 Robotics
 --------
-
+- A control systems simulator. Includes a simple PID controlled space ship and a more complex space ship controlled by two nested PIDs [ [source](https://github.com/tyehle/control-systems) ]
 
 ---
 
 Machine Learning and AI
 -----------------------
 - A question answering system based heavily on [quarc](https://www.cs.utah.edu/~riloff/pdfs/quarc.pdf)
-- [Boggle solver]({% post_url 2016-10-4-boggle %}) [[src](https://bitbucket.org/tobinyehle/bogglesolver)]
-- A [Dominion AI]({% post_url 2016-07-29-dominion %}) [[src](https://github.com/tyehle/dominion)]
+- A [Boggle solver]({% post_url 2016-10-4-boggle %}) [ [source](https://bitbucket.org/tobinyehle/bogglesolver) ]
+- A [Dominion AI]({% post_url 2016-07-29-dominion %}) [ [source](https://github.com/tyehle/dominion) ]
 - A low performance character recognition algorithm for sheet music
 - Neural nets with backprop training
 - ID3 decision trees
 - SVM with various loss functions and SGD training
-- A lame sudoku solver [[src](https://bitbucket.org/tobinyehle/sudoku-solver)]
+- A lame sudoku solver [ [source](https://bitbucket.org/tobinyehle/sudoku-solver) ]
 
 ### Thesis
 I did my undergrad thesis in natural language parsing with [Dr. Vivek Srikumar](http://svivek.com) at the University of Utah.
-- **Memoized Parsing with Derivatives**: Tobin Yehle (2016) [pdf](resources/thesis.pdf)
+- **Memoized Parsing with Derivatives**: Tobin Yehle (2016) [ [pdf](resources/thesis.pdf) ]
 
 
 ---
 
 Simulation
 ----------
-- A dynamical friction simulation [[src](https://github.com/tyehle/dynamical-friction)]
-- Particle simulation [[src](https://github.com/tyehle/particles)]
+- A dynamical friction simulation [ [source](https://github.com/tyehle/dynamical-friction) ]
+- Particle simulation [ [source](https://github.com/tyehle/particles) ]
 
 
 ---
 
 Complex Networks
 ----------------
-- Clustering analysis of suicide cases based on medical diagnostic codes for the U of U departement of Psychiatry
+- Clustering analysis of suicide cases based on medical diagnostic codes for the University of Utah departement of Psychiatry
 
 ### Publications
 I worked on complex networks with [Dr. Ronaldo Menezes](http://cs.fit.edu/~rmenezes/Home.html) at Florida Institue of Technology.
