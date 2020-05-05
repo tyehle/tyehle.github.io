@@ -5,7 +5,7 @@ permalink: /pottery
 weight: 4
 ---
 
-I'm a member of [Morning Ceramics Studio](https://www.morningceramics.com).
+I currently throw at [St. Johns Clay Collective](https://www.stjohnsclay.com/) and love firing with the folks at the [East Creek Anagama](https://www.eastcreekart.org/).
 
 I used to take amazing classes taught at the [Red Kiln](http://www.redkiln.org/).
 
