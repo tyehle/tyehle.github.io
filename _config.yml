@@ -16,7 +16,7 @@ url: "http://tobin.yehle.us" # the base hostname & protocol for your site
 repository: tyehle/tyehle.github.io
 # twitter_username:
 github_username:  tyehle
-bitbucket_username: tobinyehle
+# bitbucket_username: tobinyehle
 
 nav_pages: ['Projects', 'Research', 'Articles', 'Pottery']
 unlisted_posts: []

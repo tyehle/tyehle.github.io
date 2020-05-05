@@ -154,6 +154,15 @@
     margin-left: 0;
 }
 
+.footer-wrapper {
+    font-size: 15px;
+    color: $grey-color;
+    width: fit-content;
+    margin: auto;
+    text-align: center;
+    @extend %clearfix;
+}
+
 .footer-col-wrapper {
     font-size: 15px;
     color: $grey-color;
@@ -197,7 +206,7 @@
 }
 
 .footer-contact {
-    margin-left: 39px;
+    color: $white-color;
 }
 
 .username {
