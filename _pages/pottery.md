@@ -2,7 +2,7 @@
 layout: page
 title: Pottery
 permalink: /pottery
-weight: 4
+weight: 40
 ---
 
 I currently throw at [St. Johns Clay Collective](https://www.stjohnsclay.com/) and love firing with the folks at the [East Creek Anagama](https://www.eastcreekart.org/).

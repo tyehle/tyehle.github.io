@@ -18,7 +18,7 @@ repository: tyehle/tyehle.github.io
 github_username:  tyehle
 # bitbucket_username: tobinyehle
 
-nav_pages: ['Projects', 'Research', 'Articles', 'Pottery']
+nav_pages: ['About', 'Articles', 'Projects', 'Pottery']
 unlisted_posts: []
 
 # Build settings

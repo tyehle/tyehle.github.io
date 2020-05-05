@@ -1,6 +1,7 @@
 ---
 layout: page
-title: About Me
+title: About
+weight: 10
 ---
 
 {% include image.html img="resources/portrait.jpg" %}
