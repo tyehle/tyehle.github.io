@@ -39,7 +39,7 @@ function nestHeaders(headers) {
 function genToc(base, nestedHeaders) {
   nestedHeaders.forEach(function(elem) {
     if(elem instanceof Array) {
-      let ul = $("<ul/>");
+      let ul = $("<ul class=nested-list/>");
       genToc(ul, elem);
       base.append(ul);
     } else {
