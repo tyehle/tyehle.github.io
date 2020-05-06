@@ -1,0 +1,11 @@
+<div class="video-wrapper" >
+    <video width="100%" height="auto" {% if include.attributes %} {{ include.attributes }} {% else %} muted controls {% endif %}>
+        <source src="{{ include.video }}">
+        <!-- <source src="{{ include.video }}" type="video/mp4"> -->
+        Your browser does not support HTML5 video.
+    </video>
+
+    {% if include.caption %}
+    <p class="video-caption">{{ include.caption }}</p>
+    {% endif %}
+</div>

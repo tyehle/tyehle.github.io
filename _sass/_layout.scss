@@ -332,3 +332,21 @@
         border-color: $text-color;
     }
 }
+
+.video-wrapper {
+    text-align: center;
+    padding: $spacing-unit;
+
+    .video-caption {
+        color: $grey-color;
+        // margin-top: $spacing-unit / 4;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+
+    .video {
+        border: 1px;
+        border-style: solid;
+        border-color: $text-color;
+    }
+}
