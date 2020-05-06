@@ -157,7 +157,7 @@
 .footer-wrapper {
     font-size: 15px;
     color: $grey-color;
-    width: fit-content;
+    width: max-content;
     margin: auto;
     text-align: center;
     @extend %clearfix;
