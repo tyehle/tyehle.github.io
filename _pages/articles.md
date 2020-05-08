@@ -8,7 +8,7 @@ weight: 20
 <ul class="post-list">
 {% for post in site.posts %}
   {% capture short_name %}{{ post.id | remove_first: "/articles/" }}{% endcapture %}
-  {% if site.unlisted_posts contains post.title or site.unlisted_posts contains short_name %}
+  {% if site.unlisted_posts contains post.title or site.unlisted_posts contains short_name or post.hidden %}
     <!-- Do not show hidden posts -->
   {% else %}
     <li>
