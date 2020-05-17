@@ -1,7 +1,7 @@
 #!/usr/bin/env just --justfile
 
 serve host="localhost":
-    bundle exec jekyll serve --drafts --livereload --host={{host}}
+    bundle exec jekyll serve --drafts --livereload --incremental --host={{host}}
 
 update:
     bundle update
