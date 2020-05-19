@@ -1,4 +1,7 @@
 source 'https://rubygems.org'
-gem 'github-pages', group: :jekyll_plugins
-gem 'jekyll-github-metadata'
+
+gem 'jekyll', '~> 4.0'
 gem 'jekyll-sitemap'
+
+# gem 'github-pages', group: :jekyll_plugins
+# gem 'jekyll-github-metadata'
