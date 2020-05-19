@@ -7,7 +7,10 @@ update:
     bundle update
 
 install:
-    bundle install
+    bundle install --quiet
+
+build: install
+    JEKYLL_ENV=production bundle exec jekyll build
 
 @post title:
     #!/usr/bin/env bash

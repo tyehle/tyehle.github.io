@@ -25,11 +25,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gems-
 
+      - name: Install just
+        run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/share/rust/.cargo/bin
+
       - name: Jekyll Build
-        run: |
-          bundle config path vendor/bundle  # use a path we can cache
-          bundle install --jobs 4 --retry 3
-          JEKYLL_ENV=production bundle exec jekyll build
+        run: just build
+          # bundle config path vendor/bundle  # use a path we can cache
+          # bundle install --jobs 4 --retry 3
+          # JEKYLL_ENV=production bundle exec jekyll build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
