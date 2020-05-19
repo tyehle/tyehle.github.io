@@ -19,6 +19,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gems-
 
+      - run: echo $GITHUB_REPOSITORY
+
       - uses: helaili/jekyll-action@2.0.1
         env:
           JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
