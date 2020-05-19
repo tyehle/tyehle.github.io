@@ -314,19 +314,26 @@
 
 /**
  * Images
- * source: https://superdevresources.com/image-caption-jekyll/
  */
-.image-wrapper {
-    text-align: center;
-    padding: $spacing-unit;
-
+.page-content {
     .image-caption {
+        text-align: center;
         color: $grey-color;
-        margin-top: $spacing-unit / 4;
-        margin-bottom: 0;
+        margin-top: 0;
+        margin-bottom: $spacing-unit;
+
+        img {
+            margin-bottom: $spacing-unit / 2;
+        }
     }
 
-    .image {
+    img {
+        display: flex;
+        max-width: 90%;
+        margin-top: $spacing-unit;
+        margin-bottom: $spacing-unit;
+        margin-left: auto;
+        margin-right: auto;
         box-shadow: 2px 2px 18px 2px rgba(0, 0, 0, 0.2);
     }
 }
