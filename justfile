@@ -9,10 +9,6 @@ update:
 install:
     bundle install
 
-request-rebuild:
-    #!/usr/bin/env bash
-    curl -H "authorization: Bearer $(cat token-rebuild)" --request POST https://api.github.com/repos/tyehle/tyehle.github.io/pages/builds
-
 @post title:
     #!/usr/bin/env bash
     filename="_drafts/{{title}}.md"

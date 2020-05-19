@@ -1,3 +1,0 @@
-#!/bin/bash
-
-JEKYLL_GITHUB_TOKEN=$(cat token) bundle exec jekyll "$@"
