@@ -11,8 +11,10 @@ Instead of defining all the functions in the language in the compiler, I thought
 All code for the project can be found [on github](https://github.com/tyehle/lambda).
 
 ### Sections
+{: .no_toc}
 
-{% include toc.html tags="H2,H3" ignore="#sections" %}
+- Dummy list
+{:toc}
 
 
 ------

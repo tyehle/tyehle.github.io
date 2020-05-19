@@ -3,6 +3,14 @@ layout: post
 title: Automatic Table of Contents in Jekyll
 ---
 
+# Edit from 2020:
+
+Kramdown now makes this easy! Checkout [these gitlab docs](https://about.gitlab.com/blog/2016/07/19/markdown-kramdown-tips-and-tricks/#table-of-contents-toc) for a modern way to do this.
+
+---
+
+
+
 I recently wrote a [very long post]({% post_url 2017-01-23-lambda-compiler %}) and I wanted a table of contents to appear at the top.
 
 I also came up with a good test for the length of a post; if a table of contents would be helpful, its too long.

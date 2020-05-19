@@ -7,7 +7,8 @@ weight: 30
 
 This is a categorized list of much of the software I have worked on. Some things are listed twice if I wasn't sure what category to put them in. Source code for a lot of these projects can also be found on [my github profile](https://github.com/tyehle).
 
-{% include toc.html tags="H2,H3" %}
+- Dummy toc entry
+{: toc}
 
 
 ---
