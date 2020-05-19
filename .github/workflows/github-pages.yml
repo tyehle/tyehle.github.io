@@ -29,10 +29,9 @@ jobs:
         run: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/share/rust/.cargo/bin
 
       - name: Jekyll Build
-        run: just build
-          # bundle config path vendor/bundle  # use a path we can cache
-          # bundle install --jobs 4 --retry 3
-          # JEKYLL_ENV=production bundle exec jekyll build
+        run: |
+          bundle config path vendor/bundle  # use a path we can cache
+          just build
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
@@ -41,7 +40,3 @@ jobs:
           publish_branch: master
           publish_dir: _site
           force_orphan: true
-
-      # - uses: helaili/jekyll-action@2.0.2
-      #   env:
-      #     JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
