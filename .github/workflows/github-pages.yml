@@ -19,6 +19,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gems-
 
-      - uses: helaili/jekyll-action@2.0.2
-        env:
-          JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
+      - name: Jekyll Build
+        run: |
+          bundle config path vendor/bundle  # use a path we can cache
+          bundle install
+          JEKYLL_ENV=production bundle exec jekyll build
+          cd _site
+          touch .nojekyll
+
+      # - uses: helaili/jekyll-action@2.0.2
+      #   env:
+      #     JEKYLL_PAT: ${{ secrets.JEKYLL_PAT }}
