@@ -32,10 +32,10 @@ This language needs a garbage collector.
 Defining Success
 ----------------
 
-<!-- - What is this article about?
+- What is this article about?
 - What does it mean to be a GC that works
 - Stretch goals for a GC. How to be "good"
-- "" -->
+- ""
 
 So what does it mean for a language to "have a garbage collector"? The language I've built isn't fast or efficient
 Great, so what does that mean and how can I build it?: I need a GC, what does that mean and how to do?
