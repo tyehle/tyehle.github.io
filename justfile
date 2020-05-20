@@ -7,10 +7,13 @@ update:
     bundle update
 
 install:
-    bundle install --quiet
+    bundle install
 
 build: install
     JEKYLL_ENV=production bundle exec jekyll build
+
+clean:
+    rm -rf _site/ .jekyll-cache/ .sass-cache/
 
 @post title:
     #!/usr/bin/env bash
