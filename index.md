@@ -4,7 +4,7 @@ title: About
 weight: 10
 ---
 
-![portrait](resources/portrait.jpg)
+![portrait](resources/portrait.jpg){:standalone}
 
 I enjoy functional programming, compilers, distributed systems, machine learning, hardware, and control theory.
 
