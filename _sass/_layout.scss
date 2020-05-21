@@ -326,28 +326,16 @@
             box-shadow: 2px 2px 18px 2px rgba(0, 0, 0, 0.2);
         }
 
+        video {
+            max-width: 100%;
+            margin: auto;
+            box-shadow: 2px 2px 18px 2px rgba(0, 0, 0, 0.2);
+        }
+
         figcaption {
             color: $grey-color;
             font-size: $base-font-size;
             margin-top: $spacing-unit / 2;
         }
-    }
-}
-
-.video-wrapper {
-    text-align: center;
-    padding: $spacing-unit;
-
-    .video-caption {
-        color: $grey-color;
-        // margin-top: $spacing-unit / 4;
-        margin-top: 0;
-        margin-bottom: 0;
-    }
-
-    .video {
-        border: 1px;
-        border-style: solid;
-        border-color: $text-color;
     }
 }

@@ -1,0 +1,6 @@
+<figure markdown="block" {% if include.attributes %} {{ include.attributes }} {% endif %}>
+{{ include.contents }}
+{% if include.caption %}
+<figcaption markdown="span" {% if include.caption-attributes %} {{ include.attributes }} {% endif %}>{{ include.caption }}</figcaption>
+{% endif %}
+</figure>

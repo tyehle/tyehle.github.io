@@ -4,7 +4,7 @@ title: About
 weight: 10
 ---
 
-![portrait](resources/portrait.jpg){:standalone}
+{% include figure.html contents='![portrait](resources/portrait.jpg)' %}
 
 I enjoy functional programming, compilers, distributed systems, machine learning, hardware, and control theory.
 
