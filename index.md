@@ -10,4 +10,4 @@ I enjoy functional programming, compilers, distributed systems, machine learning
 
 I also play trumpet, climb, hike, bike, ski, and make [pottery](pottery).
 
-[This is my pgp key](tobinyehle@gmail.com.gpg).
+[This is my pgp key](resources/tobinyehle@gmail.com.gpg).
