@@ -28,6 +28,7 @@ Functional Programming
 
 Hardware
 --------
+- A static RAM cell demo board [ [source](https://github.com/tyehle/sram-cell) ]
 - An LED matrix prototyping panel for [ [source](https://github.com/tyehle/led-matrix/blob/master/led-panel/README.md) ]
 - A dance detector [ [source](https://github.com/tyehle/dance-detector) ]
 - A touch sensative necklace pendant [ [source](https://github.com/tyehle/touch-circuit/tree/master/touch-circuit-v1) ]
