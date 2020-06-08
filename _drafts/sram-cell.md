@@ -21,6 +21,17 @@ I've taken three classes on computer architecture and in all of them we talked a
 %}
 
 
+{% include figure.html
+    contents='![](/resources/sram-cell/input-schematic.svg){:width="100%"}'
+    caption='Inputs'
+%}
+
+{% include figure.html
+    contents='![](/resources/sram-cell/cell-schematic.svg){:width="100%"}'
+    caption='The cell'
+%}
+
+
 ---
 
 # TODO
