@@ -4,10 +4,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <!-- fonts -->
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans+Condensed:700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Source+Code+Pro:500,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Source+Serif+Pro:regular,bold' rel='stylesheet' type='text/css'>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
 
   <title>{{ site.title }}{% if page.title %} | {{ page.title }}{% endif %}</title>
   <meta name="description" content="{% if page.excerpt %}{{ page.excerpt | strip_html | strip_newlines | truncate: 160 }}{% else %}{{ site.description }}{% endif %}">
