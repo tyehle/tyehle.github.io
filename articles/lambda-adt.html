@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Algebraic Data Types in the Lambda Calculus</title>
+  <meta name="description" content="As I was writing a compiler for the lambda calculus, I noticed some similarities between booleans and lists. They both have two variants, and in order to use...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/lambda-adt">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">Algebraic Data Types in the Lambda Calculus</h1>
+    <p class="post-meta"><time datetime="2017-10-08T00:00:00+00:00" itemprop="datePublished">2017-10-08</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>As I was writing a <a href="/articles/lambda-compiler">compiler for the lambda calculus</a>, I noticed some similarities between booleans and lists. They both have two variants, and in order to use a boolean or a list value you must apply it two to functions that say what to do in either case. Like this</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">some-bool</span>
+  <span class="nv">value-if-true</span>
+  <span class="nv">value-if-false</span><span class="p">)</span>
+
+<span class="p">(</span><span class="nf">some-list</span>
+  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">fst</span> <span class="nv">rst</span><span class="p">)</span> <span class="p">(</span><span class="nf">do-if-cons</span> <span class="nv">fst</span> <span class="nv">rst</span><span class="p">))</span>
+  <span class="nv">value-if-nil</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>There is only one way to construct boolean and list values you can use this way. Everything must be a closure, so booleans and lists are closures that expect two arguments.</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Cons</span> <span class="nv">fst</span> <span class="nv">rst</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">do-cons</span> <span class="nv">nil-val</span><span class="p">)</span> <span class="p">(</span><span class="nf">do-cons</span> <span class="nv">fst</span> <span class="nv">rst</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">Empty</span>          <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">do-cons</span> <span class="nv">nil-val</span><span class="p">)</span> <span class="nv">nil-val</span><span class="p">))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="nv">True</span>  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">t</span> <span class="nv">f</span><span class="p">)</span> <span class="nv">t</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">False</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">t</span> <span class="nv">f</span><span class="p">)</span> <span class="nv">f</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Using a function in this way seemed very similar to the <code class="language-plaintext highlighter-rouge">case</code> or <code class="language-plaintext highlighter-rouge">match</code> syntax in many languages. I wondered if I could create some syntactic sugar for algebraic data types in general for which booleans and lists would be special cases.</p>
+
+<p>For example a <code class="language-plaintext highlighter-rouge">struct</code> definition</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="nv">Bool</span>
+  <span class="p">[</span><span class="nf">True</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">False</span><span class="p">])</span>
+
+<span class="p">(</span><span class="nf">struct</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">[</span><span class="nf">Cons</span> <span class="nv">a</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)]</span>
+  <span class="p">[</span><span class="nf">Empty</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>with a corresponding <code class="language-plaintext highlighter-rouge">case</code> keyword for destructuring</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">case</span> <span class="nv">some-bool</span>
+  <span class="p">[</span><span class="nf">True</span> <span class="nv">value-if-true</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">False</span> <span class="nv">value-if-false</span><span class="p">])</span>
+
+<span class="p">(</span><span class="k">case</span> <span class="nv">some-list</span>
+  <span class="p">[(</span><span class="nf">Cons</span> <span class="nv">fst</span> <span class="nv">rst</span><span class="p">)</span> <span class="p">(</span><span class="nf">do-if-cons</span> <span class="nv">fst</span> <span class="nv">rst</span><span class="p">)]</span>
+  <span class="p">[</span><span class="nf">Empty</span> <span class="nv">value-if-nil</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>To make this work the <code class="language-plaintext highlighter-rouge">struct</code> keyword will need to introduce constructors for the variants, and the <code class="language-plaintext highlighter-rouge">case</code> keyword will need allow us to destructure an instance of a struct.</p>
+
+<hr />
+
+<h2 id="case-keyword">Case Keyword</h2>
+
+<p>Lets start by looking at an example of the transform. The following function will find the depth of a tree structure.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">tree</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">case</span> <span class="nv">tree</span>
+    <span class="p">[</span><span class="nf">Empty</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="p">[(</span><span class="nf">Leaf</span> <span class="nv">data</span><span class="p">)</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="p">[(</span><span class="nf">Tree</span> <span class="nv">left</span> <span class="nv">right</span><span class="p">)</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="p">(</span><span class="nb">max</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">left</span><span class="p">)</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">right</span><span class="p">)))]))</span>
+</code></pre></div></div>
+
+<p>Just like the boolean and list examples, it should desugar into an application of closure named <code class="language-plaintext highlighter-rouge">tree</code> that is passed into the depth function.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">tree</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">tree</span>
+    <span class="mi">0</span>
+    <span class="p">[</span><span class="k">λ</span> <span class="p">(</span><span class="nf">data</span><span class="p">)</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="p">[</span><span class="k">λ</span> <span class="p">(</span><span class="nf">left</span> <span class="nv">right</span><span class="p">)</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="p">(</span><span class="nb">max</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">left</span><span class="p">)</span> <span class="p">(</span><span class="nf">depth</span> <span class="nv">right</span><span class="p">)))]))</span>
+</code></pre></div></div>
+
+<p>The bindings in the patterns become lambda parameters, and the expression becomes the body of the lambda. If the pattern we are matching against is a constant like <code class="language-plaintext highlighter-rouge">Empty</code> then there are no bound variables, and the expression is applied directly. It could also become an application of a lambda with no parameters, but the evaluation model I’m using is lazy, so there is no need to wrap the value in an additional lambda. ie: we just have <code class="language-plaintext highlighter-rouge">0</code> instead of <code class="language-plaintext highlighter-rouge">[λ () 0]</code>.</p>
+
+<p>The only complication for doing this transform in general is the ordering of the case clauses. We should have been able to order the clauses <code class="language-plaintext highlighter-rouge">Tree</code>, <code class="language-plaintext highlighter-rouge">Leaf</code>, <code class="language-plaintext highlighter-rouge">Empty</code>, instead of <code class="language-plaintext highlighter-rouge">Empty</code>, <code class="language-plaintext highlighter-rouge">Leaf</code>, <code class="language-plaintext highlighter-rouge">Tree</code>, and it should have desugared to the same code. To ensure this happens we need to apply the clauses in the same order they appear in the struct definition.</p>
+
+<p>In general the statement</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">case</span> <span class="nv">&lt;exp&gt;</span>
+  <span class="p">[</span><span class="nf">&lt;C2&gt;</span>                      <span class="nv">&lt;exp2&gt;</span><span class="p">]</span>
+  <span class="o">...</span>
+  <span class="p">[(</span><span class="nf">&lt;Cm&gt;</span> <span class="nv">&lt;a1&gt;</span> <span class="nv">&lt;a2&gt;</span> <span class="o">...</span> <span class="nv">&lt;an&gt;</span><span class="p">)</span> <span class="nv">&lt;expm&gt;</span><span class="p">]</span>
+  <span class="o">...</span>
+  <span class="p">[(</span><span class="nf">&lt;C1&gt;</span> <span class="nv">&lt;a1&gt;</span> <span class="nv">&lt;a2&gt;</span> <span class="o">...</span> <span class="nv">&lt;an&gt;</span><span class="p">)</span> <span class="nv">&lt;exp1&gt;</span><span class="p">])</span>
+</code></pre></div></div>
+<p>desugars to</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">&lt;exp&gt;</span>
+  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">&lt;a1&gt;</span> <span class="nv">&lt;a2&gt;</span> <span class="o">...</span> <span class="nv">&lt;an&gt;</span><span class="p">)</span> <span class="nv">&lt;exp1&gt;</span><span class="p">)</span>
+  <span class="nv">&lt;exp2&gt;</span>
+  <span class="o">...</span>
+  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">&lt;a1&gt;</span> <span class="nv">&lt;a2&gt;</span> <span class="o">...</span> <span class="nv">&lt;an&gt;</span><span class="p">)</span> <span class="nv">&lt;expm&gt;</span><span class="p">))</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="struct-keyword">Struct keyword</h2>
+
+<p>The definition of the tree structure we used before would look like</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="p">(</span><span class="nf">Tree</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">[</span><span class="nf">Empty</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">Leaf</span> <span class="nv">a</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">Node</span> <span class="p">(</span><span class="nf">Tree</span> <span class="nv">a</span><span class="p">)</span> <span class="p">(</span><span class="nf">Tree</span> <span class="nv">a</span><span class="p">)])</span>
+</code></pre></div></div>
+
+<p>The compiler needs to keep track of the order of the variants in order to desugar any <code class="language-plaintext highlighter-rouge">case</code> statements correctly, but it also needs to generate a constructor for each variant. This tree structure has three variants, so the constructors would be:</p>
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Empty :: Tree a</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Leaf :: a -&gt; Tree a</code></li>
+  <li><code class="language-plaintext highlighter-rouge">Node :: Tree a -&gt; Tree a -&gt; Tree a</code>.</li>
+</ul>
+
+<p>We know that the constructors need to generate a closure that expects three arguments, one for each variant. Each of those arguments will be a function that operates on the data stored in that variant.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">Empty</span>             <span class="p">(</span><span class="k">λ</span> <span class="nv">empty</span> <span class="nv">leaf</span> <span class="nv">node</span><span class="p">)</span> <span class="nv">empty</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Leaf</span> <span class="nv">data</span><span class="p">)</span>       <span class="p">(</span><span class="k">λ</span> <span class="nv">empty</span> <span class="nv">leaf</span> <span class="nv">node</span><span class="p">)</span> <span class="p">(</span><span class="nf">leaf</span> <span class="nv">data</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Node</span> <span class="nv">left</span> <span class="nv">right</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="nv">empty</span> <span class="nv">leaf</span> <span class="nv">node</span><span class="p">)</span> <span class="p">(</span><span class="nf">node</span> <span class="nv">left</span> <span class="nv">right</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>But why did we pick the variable names <code class="language-plaintext highlighter-rouge">left</code>, <code class="language-plaintext highlighter-rouge">right</code>, and <code class="language-plaintext highlighter-rouge">data</code>? We have some intuition about the meaning of these variables, but the desugarer will need to generate these variables names. The lambda parameters also need to be generated, and we could reuse the name of the variant, but this may cause confusion to a human, so I will mangle them. With these changes the definitions would look like this</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">Empty</span>        <span class="p">(</span><span class="k">λ</span> <span class="nv">_Empty</span> <span class="nv">_Leaf</span> <span class="nv">_Node</span><span class="p">)</span> <span class="nv">_Empty</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Leaf</span> <span class="nv">a1</span><span class="p">)</span>    <span class="p">(</span><span class="k">λ</span> <span class="nv">_Empty</span> <span class="nv">_Leaf</span> <span class="nv">_Node</span><span class="p">)</span> <span class="p">(</span><span class="nf">_Leaf</span> <span class="nv">a1</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Node</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="nv">_Empty</span> <span class="nv">_Leaf</span> <span class="nv">_Node</span><span class="p">)</span> <span class="p">(</span><span class="nf">_Node</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>In general the statement</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="nv">&lt;Name&gt;</span>
+  <span class="p">[</span><span class="nf">&lt;C1&gt;</span> <span class="nv">&lt;T1&gt;</span> <span class="nv">&lt;T2&gt;</span> <span class="o">...</span> <span class="nv">&lt;Tn&gt;</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">&lt;C2&gt;</span><span class="p">]</span>
+  <span class="o">...</span>
+  <span class="p">[</span><span class="nf">&lt;Cm&gt;</span> <span class="nv">&lt;T1&gt;</span> <span class="nv">&lt;T2&gt;</span> <span class="o">...</span> <span class="nv">&lt;Tn&gt;</span><span class="p">])</span>
+</code></pre></div></div>
+<p>desugars to</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">&lt;C1&gt;</span> <span class="nv">a1</span> <span class="nv">a2</span> <span class="o">...</span> <span class="nv">an</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">&lt;_C1&gt;</span> <span class="nv">&lt;_C2&gt;</span> <span class="o">...</span> <span class="nv">&lt;_Cm&gt;</span><span class="p">)</span> <span class="p">(</span><span class="nf">&lt;_C1&gt;</span> <span class="nv">a1</span> <span class="nv">a2</span> <span class="o">...</span> <span class="nv">an</span><span class="p">)</span> <span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">&lt;C2&gt;</span>                <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">&lt;_C1&gt;</span> <span class="nv">&lt;_C2&gt;</span> <span class="o">...</span> <span class="nv">&lt;_Cm&gt;</span><span class="p">)</span> <span class="nv">&lt;_C2&gt;</span><span class="p">))</span>
+<span class="o">...</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">&lt;Cm&gt;</span> <span class="nv">a1</span> <span class="nv">a2</span> <span class="o">...</span> <span class="nv">an</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">&lt;_C1&gt;</span> <span class="nv">&lt;_C2&gt;</span> <span class="o">...</span> <span class="nv">&lt;_Cm&gt;</span><span class="p">)</span> <span class="p">(</span><span class="nf">&lt;_Cm&gt;</span> <span class="nv">a1</span> <span class="nv">a2</span> <span class="o">...</span> <span class="nv">an</span><span class="p">)</span> <span class="p">))</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="examples">Examples</h2>
+
+<p>I started this project with the goal of generalizing the syntax of booleans and lists to something that will work for any algebraic data type.</p>
+
+<h3 id="booleans">Booleans</h3>
+
+<p>It is easy to see that the simple example of an if statement will desugar the same way as the standard encoding for <a href="https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans">Church booleans</a>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="nv">Bool</span>
+  <span class="p">[</span><span class="nf">True</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">False</span><span class="p">])</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="k">if</span> <span class="nv">c</span> <span class="nv">t</span> <span class="nv">f</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">case</span> <span class="nv">c</span>
+    <span class="p">[</span><span class="nf">True</span>  <span class="nv">t</span><span class="p">]</span>
+    <span class="p">[</span><span class="nf">False</span> <span class="nv">f</span><span class="p">]))</span>
+</code></pre></div></div>
+<p>becomes</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">True</span>  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_True_0</span> <span class="nv">_False_0</span><span class="p">)</span> <span class="nv">_True_0</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">False</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_True_0</span> <span class="nv">_False_0</span><span class="p">)</span> <span class="nv">_False_0</span><span class="p">))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="k">if</span> <span class="nv">c</span> <span class="nv">t</span> <span class="nv">f</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">c</span> <span class="nv">t</span> <span class="nv">f</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h3 id="lists">Lists</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">isNil</code> function compiles to exactly the same lambda expression it did before.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">[</span><span class="nf">Empty</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">Cons</span> <span class="nv">a</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)])</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">isNil</span> <span class="nv">list</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">case</span> <span class="nv">list</span>
+    <span class="p">[</span><span class="nf">Empty</span> <span class="nv">True</span><span class="p">]</span>
+    <span class="p">[(</span><span class="nf">Cons</span> <span class="nv">_</span> <span class="nv">_</span><span class="p">)</span> <span class="nv">False</span><span class="p">]))</span>
+</code></pre></div></div>
+<p>becomes</p>
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="nv">Empty</span>        <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">_Empty</span><span class="p">)</span> <span class="nv">_Empty</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Cons</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">_Empty</span><span class="p">)</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">isNil</span> <span class="nv">list</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">list</span> <span class="nv">True</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_</span> <span class="nv">_</span><span class="p">)</span> <span class="nv">False</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<h3 id="maybe">Maybe</h3>
+
+<p>It is now a breeze to define other well known functions like the safe version of <code class="language-plaintext highlighter-rouge">head</code>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">struct</span> <span class="p">(</span><span class="nf">Maybe</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">[</span><span class="nf">Just</span> <span class="nv">a</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">Nothing</span><span class="p">])</span>
+
+<span class="p">(</span><span class="nf">struct</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">[</span><span class="nf">Empty</span><span class="p">]</span>
+  <span class="p">[</span><span class="nf">Cons</span> <span class="nv">a</span> <span class="p">(</span><span class="nf">List</span> <span class="nv">a</span><span class="p">)])</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">head?</span> <span class="nv">list</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">case</span> <span class="nv">list</span>
+    <span class="p">[</span><span class="nf">Empty</span>             <span class="nv">Nothing</span><span class="p">]</span>
+    <span class="p">[(</span><span class="nf">Cons</span> <span class="nv">first</span> <span class="nv">rest</span><span class="p">)</span> <span class="p">(</span><span class="nf">Just</span> <span class="nv">first</span><span class="p">)]))</span>
+</code></pre></div></div>
+
+<p>becomes</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Just</span> <span class="nv">a1</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Just</span> <span class="nv">_Nothing</span><span class="p">)</span> <span class="p">(</span><span class="nf">_Just</span> <span class="nv">a1</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">Nothing</span>   <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Just</span> <span class="nv">_Nothing</span><span class="p">)</span> <span class="nv">_Nothing</span><span class="p">))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="nv">Empty</span>        <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">_Empty</span><span class="p">)</span> <span class="nv">_Empty</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">Cons</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">)</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">_Empty</span><span class="p">)</span> <span class="p">(</span><span class="nf">_Cons</span> <span class="nv">a1</span> <span class="nv">a2</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">head?</span> <span class="nv">list</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">list</span>
+    <span class="nv">Nothing</span>
+    <span class="p">[</span><span class="k">λ</span> <span class="p">(</span><span class="nf">first</span> <span class="nv">rest</span><span class="p">)</span> <span class="p">(</span><span class="nf">Just</span> <span class="nv">first</span><span class="p">)]))</span>
+</code></pre></div></div>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
