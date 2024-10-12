@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Compiling and Interpreting the Lambda Calculus in Haskell</title>
+  <meta name="description" content="This whole project is based on this post by Matt Might. I decided I would try to implement it in Haskell instead of Racket. There are several steps of the pr...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/lambda-compiler">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">Compiling and Interpreting the Lambda Calculus in Haskell</h1>
+    <p class="post-meta"><time datetime="2017-01-23T00:00:00+00:00" itemprop="datePublished">2017-01-23</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>This whole project is based on <a href="http://matt.might.net/articles/compiling-up-to-lambda-calculus">this post by Matt Might</a>. I decided I would try to implement it in Haskell instead of Racket. There are several steps of the process that are missed because they are built into the Racket language. In my implementation I needed a parser, an interpreter, and an extractor, in addition to a reimplementation of the compiler.</p>
+
+<p>Instead of defining all the functions in the language in the compiler, I thought it would be more fun to write them in the language itself. This greatly reduces the complexity of the parser and the compiler. Also it means you can add any library functions you see fit, and I ended up adding some comparisons, and list operations.</p>
+
+<p>All code for the project can be found <a href="https://github.com/tyehle/lambda">on github</a>.</p>
+
+<h3 class="no_toc" id="sections">Sections</h3>
+
+<ul id="markdown-toc">
+  <li><a href="#parser" id="markdown-toc-parser">Parser</a></li>
+  <li><a href="#base-definitions" id="markdown-toc-base-definitions">Base Definitions</a>    <ul>
+      <li><a href="#useful-functions" id="markdown-toc-useful-functions">Useful Functions</a></li>
+      <li><a href="#booleans" id="markdown-toc-booleans">Booleans</a></li>
+      <li><a href="#church-numerals" id="markdown-toc-church-numerals">Church Numerals</a></li>
+      <li><a href="#numeric-operations" id="markdown-toc-numeric-operations">Numeric Operations</a></li>
+      <li><a href="#lists" id="markdown-toc-lists">Lists</a></li>
+    </ul>
+  </li>
+  <li><a href="#compiler" id="markdown-toc-compiler">Compiler</a>    <ul>
+      <li><a href="#scope-and-free-variables" id="markdown-toc-scope-and-free-variables">Scope and Free Variables</a></li>
+      <li><a href="#define" id="markdown-toc-define">Define</a></li>
+      <li><a href="#easy-prey-variables-application-and-numbers" id="markdown-toc-easy-prey-variables-application-and-numbers">Easy Prey: Variables, Application and Numbers</a></li>
+      <li><a href="#multi-argument-lambdas" id="markdown-toc-multi-argument-lambdas">Multi-Argument Lambdas</a></li>
+      <li><a href="#let" id="markdown-toc-let">Let</a></li>
+      <li><a href="#letrec" id="markdown-toc-letrec">Letrec</a></li>
+    </ul>
+  </li>
+  <li><a href="#interpreter" id="markdown-toc-interpreter">Interpreter</a>    <ul>
+      <li><a href="#call-by-need" id="markdown-toc-call-by-need">Call by Need</a></li>
+      <li><a href="#why-use-st" id="markdown-toc-why-use-st">Why Use ST?</a></li>
+      <li><a href="#result-type" id="markdown-toc-result-type">Result Type</a></li>
+      <li><a href="#interpreting-an-expression" id="markdown-toc-interpreting-an-expression">Interpreting An expression</a></li>
+      <li><a href="#extracting-a-result" id="markdown-toc-extracting-a-result">Extracting a Result</a></li>
+      <li><a href="#running-a-stateful-computation" id="markdown-toc-running-a-stateful-computation">Running a Stateful Computation</a></li>
+    </ul>
+  </li>
+  <li><a href="#tying-it-all-together" id="markdown-toc-tying-it-all-together">Tying it all Together</a>    <ul>
+      <li><a href="#the-pieces" id="markdown-toc-the-pieces">The Pieces</a></li>
+      <li><a href="#the-interface" id="markdown-toc-the-interface">The Interface</a></li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="parser">Parser</h2>
+<p>Because many functions are implemented in the language itself, the grammar quite small.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;program&gt; ::= &lt;define&gt; ... &lt;exp&gt;
+
+&lt;module&gt;  ::= &lt;define&gt; ...
+
+&lt;define&gt;  ::= (define &lt;var&gt; &lt;exp&gt;)
+           |  (define (&lt;var&gt; &lt;arg&gt; ...) &lt;exp&gt;)
+
+&lt;exp&gt;     ::= &lt;var&gt;
+
+           |  &lt;nat&gt;
+
+           |  (&lt;lam&gt; (&lt;arg&gt; ...) &lt;exp&gt;)
+           |  (let ((&lt;var&gt; &lt;exp&gt;) ...) &lt;exp&gt;)
+           |  (letrec (&lt;var&gt; &lt;exp&gt;) &lt;exp&gt;)
+
+           |  (&lt;exp&gt; &lt;exp&gt; ...)
+
+&lt;arg&gt;     ::= _ | &lt;var&gt;
+
+&lt;lam&gt;     ::= λ | lambda
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">&lt;arg&gt;</code> is its own form because I like using <code class="language-plaintext highlighter-rouge">_</code> as an ignored argument.</p>
+
+<p>I added <code class="language-plaintext highlighter-rouge">program</code>, <code class="language-plaintext highlighter-rouge">module</code> and <code class="language-plaintext highlighter-rouge">define</code> forms to make it possible to do bootstrapping.</p>
+
+<p>I used <a href="https://hackage.haskell.org/package/parsec">parsec</a> to get the grammar into this data structure.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Program</span> <span class="o">=</span> <span class="kt">Program</span> <span class="p">[</span><span class="kt">Definition</span><span class="p">]</span> <span class="kt">Exp</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Show</span><span class="p">)</span>
+
+<span class="kr">data</span> <span class="kt">Definition</span> <span class="o">=</span> <span class="kt">Def</span> <span class="kt">String</span> <span class="kt">Exp</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Show</span><span class="p">)</span>
+
+<span class="kr">data</span> <span class="kt">Exp</span> <span class="o">=</span> <span class="kt">Var</span> <span class="kt">String</span>
+
+         <span class="o">|</span> <span class="kt">Num</span> <span class="kt">Int</span>
+
+         <span class="o">|</span> <span class="kt">Lambda</span> <span class="p">[</span><span class="kt">String</span><span class="p">]</span> <span class="kt">Exp</span>
+         <span class="o">|</span> <span class="kt">Let</span> <span class="p">[(</span><span class="kt">String</span><span class="p">,</span> <span class="kt">Exp</span><span class="p">)]</span> <span class="kt">Exp</span>
+         <span class="o">|</span> <span class="kt">Letrec</span> <span class="kt">String</span> <span class="kt">Exp</span> <span class="kt">Exp</span>
+
+         <span class="o">|</span> <span class="kt">Application</span> <span class="kt">Exp</span> <span class="kt">Exp</span>
+         <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Show</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>I also wrote a very basic “lexer” to remove comments.</p>
+
+<p>This isn’t a parsec tutorial, so I won’t bore you with details of the parser. The interface to the parser is</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">parseProgram</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="kt">Program</span>
+<span class="n">parseProgram</span> <span class="o">=</span> <span class="n">lexParse</span> <span class="n">programP</span>
+
+<span class="n">parseModule</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="p">[</span><span class="kt">Definition</span><span class="p">]</span>
+<span class="n">parseModule</span> <span class="o">=</span> <span class="n">lexParse</span> <span class="n">moduleP</span>
+
+<span class="n">lexParse</span> <span class="o">::</span> <span class="kt">Parser</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="n">a</span>
+<span class="n">lexParse</span> <span class="n">p</span> <span class="n">name</span> <span class="n">input</span> <span class="o">=</span> <span class="n">first</span> <span class="n">show</span> <span class="o">$</span> <span class="n">parse</span> <span class="n">commentP</span> <span class="n">name</span> <span class="n">input</span> <span class="o">&gt;&gt;=</span> <span class="n">parse</span> <span class="n">p</span> <span class="n">name</span>
+</code></pre></div></div>
+
+<p>I had never used <a href="">bifunctors</a> before, but it sure made handling <code class="language-plaintext highlighter-rouge">Either</code> easier.</p>
+
+<p>This will result in a <code class="language-plaintext highlighter-rouge">Left</code> with the shown version of the <code class="language-plaintext highlighter-rouge">ParseError</code> if the parser fails. Throughout the project I used <code class="language-plaintext highlighter-rouge">Left String</code> to represent error.</p>
+
+<p>Every stage of the compiler has the type <code class="language-plaintext highlighter-rouge">a -&gt; Either String b</code> so it can all be strung together with bind.</p>
+
+<hr />
+
+<h2 id="base-definitions">Base Definitions</h2>
+
+<p>The bootstrapped definitions of basic functions in the language are in <a href="https://github.com/tyehle/lambda/blob/master/resources/base.lc">resources/base.lc</a>.</p>
+
+<p>All the desugarings implemented in <a href="http://matt.might.net/articles/compiling-up-to-lambda-calculus">Matt Might’s post</a> that are missing from the compiler are here.</p>
+
+<p>There are also some new definitions that make actually writing programs a bit easier.</p>
+
+<h3 id="useful-functions">Useful Functions</h3>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">id</span> <span class="nv">x</span><span class="p">)</span> <span class="nv">x</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">const</span> <span class="nv">x</span> <span class="nv">_</span><span class="p">)</span> <span class="nv">x</span><span class="p">)</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">hang</span>
+  <span class="p">((</span><span class="k">λ</span> <span class="p">(</span><span class="nf">u</span><span class="p">)</span> <span class="p">(</span><span class="nf">u</span> <span class="nv">u</span><span class="p">))</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">u</span><span class="p">)</span> <span class="p">(</span><span class="nf">u</span> <span class="nv">u</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">const</code> will work the same as in Haskell because the interpreter is lazy. <code class="language-plaintext highlighter-rouge">(const x hang)</code> won’t evaluate the second argument, so it won’t hang.</p>
+
+<p><code class="language-plaintext highlighter-rouge">hang</code> is used to kill the program if <code class="language-plaintext highlighter-rouge">head</code> or <code class="language-plaintext highlighter-rouge">tail</code> is called on an empty list. Might seem a bit draconian, but I didn’t implement errors or exceptions cause they’re hard. So too bad.</p>
+
+<h3 id="booleans">Booleans</h3>
+
+<p>All booleans are <a href="https://en.wikipedia.org/wiki/Church_encoding#Church_Booleans">church encoded</a>. Church booleans are functions that take two arguments; what to do if its true, and what to do if its false.</p>
+
+<ul>
+  <li>true = <code class="language-plaintext highlighter-rouge">(λ (t f) t)</code></li>
+  <li>false = <code class="language-plaintext highlighter-rouge">(λ (t f) f)</code></li>
+</ul>
+
+<p>Since the interpreter is lazy <code class="language-plaintext highlighter-rouge">if</code> can be safely represented as a function because the branch that is not taken will never be evaluated.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="k">if</span> <span class="nv">c</span> <span class="nv">t</span> <span class="nv">f</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">c</span> <span class="nv">t</span> <span class="nv">f</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>All other boolean operations can be defined in a similar way, eg. <code class="language-plaintext highlighter-rouge">not</code>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">not</span> <span class="nv">a</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">a</span> <span class="no">#f</span> <span class="no">#t</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h3 id="church-numerals">Church Numerals</h3>
+
+<p>All things are done using <a href="https://en.wikipedia.org/wiki/Church_encoding#Church_numerals">Church Numerals</a>.</p>
+
+<p>A church numeral is a function that takes two arguments: an operation to perform <code class="language-plaintext highlighter-rouge">f</code> and an object to operate on <code class="language-plaintext highlighter-rouge">x</code>. For the church numeral n, the operation is done n times to <code class="language-plaintext highlighter-rouge">x</code>.</p>
+
+<ul>
+  <li>1 = <code class="language-plaintext highlighter-rouge">(λ (f x) (f x))</code></li>
+  <li>0 = <code class="language-plaintext highlighter-rouge">(λ (f x) x)</code></li>
+  <li>3 = <code class="language-plaintext highlighter-rouge">(λ (f x) (f (f (f x))))</code></li>
+</ul>
+
+<h3 id="numeric-operations">Numeric Operations</h3>
+
+<p>The new numeric operations are defined as follows.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">even?</span> <span class="nv">n</span><span class="p">)</span> <span class="p">(</span><span class="nf">n</span> <span class="nv">not</span> <span class="no">#t</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">even?</code> is its own function because a general remainder operator using repeated subtraction is (I think) less efficient.
+When the the number is evaluated it will apply <code class="language-plaintext highlighter-rouge">not</code> to <code class="language-plaintext highlighter-rouge">#t</code> n times.</p>
+
+<p>You may have noticed this will take at least linear time as opposed to constant time one would expect from a real programming language. This is because church numerals are slow and should never be used unless you like <a href="https://xkcd.com/303/">office chair battles</a>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">/</span> <span class="nv">n</span> <span class="nv">m</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">letrec</span> <span class="p">(</span><span class="nf">div1</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">n1</span> <span class="nv">m1</span><span class="p">)</span>
+                  <span class="p">(</span><span class="k">let</span> <span class="p">([</span><span class="nf">diff</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">n1</span> <span class="nv">m1</span><span class="p">)])</span>
+                    <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">zero?</span> <span class="nv">diff</span><span class="p">)</span>
+                        <span class="mi">0</span>
+                        <span class="p">(</span><span class="nf">succ</span> <span class="p">(</span><span class="nf">div1</span> <span class="nv">diff</span> <span class="nv">m1</span><span class="p">))))))</span>
+    <span class="p">(</span><span class="nf">div1</span> <span class="p">(</span><span class="nf">succ</span> <span class="nv">n</span><span class="p">)</span> <span class="nv">m</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>The division algorithm is repeated subtraction, and is described <a href="https://en.wikipedia.org/wiki/Church_encoding#Division">on wikipedia</a>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">div1</code> is fast (because it only does one subtraction each iteration), but it is not quite the division operator we want.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">(div1 2 3) = 0</code> as expected</li>
+  <li><code class="language-plaintext highlighter-rouge">(div1 4 3) = 1</code> as expected</li>
+  <li><code class="language-plaintext highlighter-rouge">(div1 3 3) = 0</code>, but should be 1</li>
+</ul>
+
+<p>To fix this problem we just need to add one to the input <code class="language-plaintext highlighter-rouge">n</code>. This fix would create problems with negative numbers, but there are no negative numbers in this language, so its all fine.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">mod</span> <span class="nv">n</span> <span class="nv">m</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">letrec</span> <span class="p">(</span><span class="nf">mod1</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">n1</span> <span class="nv">m1</span><span class="p">)</span>
+                  <span class="p">(</span><span class="k">let</span> <span class="p">([</span><span class="nf">diff</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">n1</span> <span class="nv">m1</span><span class="p">)])</span>
+                    <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">zero?</span> <span class="nv">diff</span><span class="p">)</span>
+                        <span class="nv">n1</span>
+                        <span class="p">(</span><span class="nf">mod1</span> <span class="nv">diff</span> <span class="nv">m1</span><span class="p">)))))</span>
+    <span class="p">(</span><span class="nf">prev</span> <span class="p">(</span><span class="nf">mod1</span> <span class="p">(</span><span class="nf">succ</span> <span class="nv">n</span><span class="p">)</span> <span class="nv">m</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">mod</code> is the same algorithm as division, but instead of counting the number of iterations, we just return <code class="language-plaintext highlighter-rouge">n1</code>.</p>
+
+<p>The fix is much the same; just add 1 to the input. Since its the final value of the input we are interested in we then subtract one from the result.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">&lt;=</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">zero?</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">&gt;=</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">zero?</span> <span class="p">(</span><span class="nb">-</span> <span class="nv">b</span> <span class="nv">a</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">&lt;</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">&lt;=</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="nv">a</span><span class="p">)</span> <span class="nv">b</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">&gt;</span> <span class="nv">a</span> <span class="nv">b</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">&gt;=</span> <span class="nv">a</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="nv">b</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>All the new comparison operations check if the result of a subtraction is zero.</p>
+
+<h3 id="lists">Lists</h3>
+
+<p>Church encoded lists are similar to booleans. They are functions that take a thing to do if the list is a pair, and a result if the list is empty. If the list is a pair then the function is given two arguments, the head and the tail. If the list is empty then the result is passed straight through.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">cons</span> <span class="nv">h</span> <span class="nv">t</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">f</span> <span class="nv">_</span><span class="p">)</span> <span class="p">(</span><span class="nf">f</span> <span class="nv">h</span> <span class="nv">t</span><span class="p">)))</span>
+<span class="p">(</span><span class="k">define</span> <span class="nv">empty</span>
+  <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_</span> <span class="nv">e</span><span class="p">)</span> <span class="nv">e</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>This encoding will only work with a lazy interpreter. The argument <code class="language-plaintext highlighter-rouge">e</code> must only be evaluated if the list is empty.</p>
+
+<p>Using these definitions we can define common list operations, some of which I have listed below.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">head</span> <span class="nv">l</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">l</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">h</span> <span class="nv">_</span><span class="p">)</span> <span class="nv">h</span><span class="p">)</span> <span class="nv">hang</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">tail</span> <span class="nv">l</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">l</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_</span> <span class="nv">t</span><span class="p">)</span> <span class="nv">t</span><span class="p">)</span> <span class="nv">hang</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">pair?</span> <span class="nv">l</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">l</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_</span> <span class="nv">_</span><span class="p">)</span> <span class="no">#t</span><span class="p">)</span> <span class="no">#f</span><span class="p">))</span>
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nb">null?</span> <span class="nv">l</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">l</span> <span class="p">(</span><span class="k">λ</span> <span class="p">(</span><span class="nf">_</span> <span class="nv">_</span><span class="p">)</span> <span class="no">#f</span><span class="p">)</span> <span class="no">#t</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>As I said earlier, <code class="language-plaintext highlighter-rouge">head</code> and <code class="language-plaintext highlighter-rouge">tail</code> will hang if called on the empty list because there isn’t anything else we could reasonably do.</p>
+
+<p><code class="language-plaintext highlighter-rouge">pair?</code> and <code class="language-plaintext highlighter-rouge">null?</code> never evaluate the contents of the list, so a program like <code class="language-plaintext highlighter-rouge">(pair? (cons hang hang))</code> will still terminate.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">from</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="p">(</span><span class="nb">cons</span> <span class="nv">n</span> <span class="p">(</span><span class="nf">from</span> <span class="p">(</span><span class="nf">succ</span> <span class="nv">n</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">from</code> builds an infinite list starting at the given value. Since the interpreter is lazy this is not a problem.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">take</span> <span class="nv">n</span> <span class="nv">l</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="k">or</span> <span class="p">(</span><span class="nb">zero?</span> <span class="nv">n</span><span class="p">)</span> <span class="p">(</span><span class="nb">null?</span> <span class="nv">l</span><span class="p">))</span>
+      <span class="nv">empty</span>
+      <span class="p">(</span><span class="nb">cons</span> <span class="p">(</span><span class="nf">head</span> <span class="nv">l</span><span class="p">)</span> <span class="p">(</span><span class="nf">take</span> <span class="p">(</span><span class="nf">prev</span> <span class="nv">n</span><span class="p">)</span> <span class="p">(</span><span class="nf">tail</span> <span class="nv">l</span><span class="p">)))))</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">take</code> results in a list containing the first n elements of the given list. It will return fewer than n items if the given list is not long enough.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">foldl</span> <span class="nv">fn</span> <span class="nv">acc</span> <span class="nv">xs</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">null?</span> <span class="nv">xs</span><span class="p">)</span>
+      <span class="nv">acc</span>
+      <span class="p">(</span><span class="nf">foldl</span> <span class="nv">fn</span> <span class="p">(</span><span class="nf">fn</span> <span class="nv">acc</span> <span class="p">(</span><span class="nf">head</span> <span class="nv">xs</span><span class="p">))</span> <span class="p">(</span><span class="nf">tail</span> <span class="nv">xs</span><span class="p">))))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">foldr</span> <span class="nv">fn</span> <span class="nv">acc</span> <span class="nv">xs</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">null?</span> <span class="nv">xs</span><span class="p">)</span>
+      <span class="nv">acc</span>
+      <span class="p">(</span><span class="nf">fn</span> <span class="p">(</span><span class="nf">head</span> <span class="nv">xs</span><span class="p">)</span> <span class="p">(</span><span class="nf">foldr</span> <span class="nv">fn</span> <span class="nv">acc</span> <span class="p">(</span><span class="nf">tail</span> <span class="nv">xs</span><span class="p">)))))</span>
+</code></pre></div></div>
+
+<p>Folds work here like they do in every other language.</p>
+
+<p>The lazy interpreter allows the right fold to exit early.</p>
+
+<p>A right fold that gets the first element if it exists, <code class="language-plaintext highlighter-rouge">(foldr (λ (e _) #t) #f (from 0))</code>, will terminate, but the left fold version will not.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">range</span> <span class="nv">low</span> <span class="nv">high</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">&gt;=</span> <span class="nv">low</span> <span class="nv">high</span><span class="p">)</span>
+      <span class="nv">empty</span>
+      <span class="p">(</span><span class="nb">cons</span> <span class="nv">low</span>
+            <span class="p">(</span><span class="nf">range</span> <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="nv">low</span><span class="p">)</span>
+                   <span class="nv">high</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>This definition is just more efficient than <code class="language-plaintext highlighter-rouge">(take (- high low) (from low))</code> because church numerals suck.</p>
+
+<p>All the other language features must be implemented by the compiler.</p>
+
+<hr />
+
+<h2 id="compiler">Compiler</h2>
+
+<p>The purpose of the compiler is to transform the high level AST into one that represents the pure lambda calculus. The target structure is</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Node</span> <span class="o">=</span> <span class="kt">Lam</span> <span class="kt">String</span> <span class="kt">Node</span>
+          <span class="o">|</span> <span class="kt">Ref</span> <span class="kt">String</span>
+          <span class="o">|</span> <span class="kt">App</span> <span class="kt">Node</span> <span class="kt">Node</span>
+          <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Show</span><span class="p">,</span> <span class="kt">Eq</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="scope-and-free-variables">Scope and Free Variables</h3>
+
+<p>There are a bunch of places in the compiler and interpreter where knowing which variables will be referenced later is important.</p>
+
+<p>Any variable that has no binding is considered free.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">(λ (x) (f x))</code> – <code class="language-plaintext highlighter-rouge">f</code> is free and <code class="language-plaintext highlighter-rouge">x</code> is bound</li>
+  <li><code class="language-plaintext highlighter-rouge">(λ (y) (λ (x) (y x)))</code> – <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> are both bound</li>
+  <li><code class="language-plaintext highlighter-rouge">((λ (x) x) x)</code> – <code class="language-plaintext highlighter-rouge">x</code> is  bound inside the lambda but free outside</li>
+</ul>
+
+<p>The compiler needs to know which variables are free to determine which definitions can be dropped, and the interpreter needs to know which variables are free to handle closures properly.</p>
+
+<p>Both the <code class="language-plaintext highlighter-rouge">Node</code> and <code class="language-plaintext highlighter-rouge">Exp</code> structures need a <code class="language-plaintext highlighter-rouge">freeVars</code> function, so they implement a typeclass.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">class</span> <span class="kt">Scope</span> <span class="n">a</span> <span class="kr">where</span>
+  <span class="n">freeVars</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">Set</span> <span class="kt">String</span>
+</code></pre></div></div>
+
+<p>This allows a convenient function for guards in the compiler and interpreter.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">isFree</span> <span class="o">::</span> <span class="kt">Scope</span> <span class="n">e</span> <span class="o">=&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="n">e</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">isFree</span> <span class="n">name</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">name</span> <span class="p">`</span><span class="kt">Set</span><span class="o">.</span><span class="n">member</span><span class="p">`</span> <span class="n">freeVars</span> <span class="n">expr</span>
+</code></pre></div></div>
+
+<p>For the <code class="language-plaintext highlighter-rouge">Node</code> structure, <code class="language-plaintext highlighter-rouge">Lam</code> is the only way to bind a variable, and <code class="language-plaintext highlighter-rouge">Ref</code> is the only way to reference one.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">instance</span> <span class="kt">Scope</span> <span class="kt">Node</span> <span class="kr">where</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Lam</span> <span class="n">arg</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">delete</span> <span class="n">arg</span> <span class="o">$</span> <span class="n">freeVars</span> <span class="n">body</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Ref</span> <span class="n">name</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">singleton</span> <span class="n">name</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">App</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">freeVars</span> <span class="n">f</span> <span class="p">`</span><span class="kt">Set</span><span class="o">.</span><span class="n">union</span><span class="p">`</span> <span class="n">freeVars</span> <span class="n">x</span>
+</code></pre></div></div>
+
+<p>For <code class="language-plaintext highlighter-rouge">Exp</code>, variables can be bound by <code class="language-plaintext highlighter-rouge">Lambda</code>, <code class="language-plaintext highlighter-rouge">Let</code> or <code class="language-plaintext highlighter-rouge">Letrec</code>, and referenced by <code class="language-plaintext highlighter-rouge">Var</code>.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">instance</span> <span class="kt">Scope</span> <span class="kt">Exp</span> <span class="kr">where</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">name</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">singleton</span> <span class="n">name</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Lambda</span> <span class="n">args</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">freeVars</span> <span class="n">body</span> <span class="p">`</span><span class="n">removeAll</span><span class="p">`</span> <span class="n">args</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Let</span> <span class="n">bindings</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">foldr</span> <span class="n">addBindingVars</span> <span class="n">bodyVars</span> <span class="n">bindings</span>
+    <span class="kr">where</span>
+      <span class="n">addBindingVars</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">union</span> <span class="o">.</span> <span class="n">freeVars</span> <span class="o">.</span> <span class="n">snd</span>
+      <span class="n">bodyVars</span> <span class="o">=</span> <span class="n">freeVars</span> <span class="n">body</span> <span class="p">`</span><span class="n">removeAll</span><span class="p">`</span> <span class="n">map</span> <span class="n">fst</span> <span class="n">bindings</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Letrec</span> <span class="n">name</span> <span class="n">binding</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">delete</span> <span class="n">name</span> <span class="n">allVars</span>
+    <span class="kr">where</span>
+      <span class="n">allVars</span> <span class="o">=</span> <span class="n">freeVars</span> <span class="n">binding</span> <span class="p">`</span><span class="kt">Set</span><span class="o">.</span><span class="n">union</span><span class="p">`</span> <span class="n">freeVars</span> <span class="n">body</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Num</span> <span class="kr">_</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">empty</span>
+  <span class="n">freeVars</span> <span class="p">(</span><span class="kt">Application</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">freeVars</span> <span class="n">f</span> <span class="p">`</span><span class="kt">Set</span><span class="o">.</span><span class="n">union</span><span class="p">`</span> <span class="n">freeVars</span> <span class="n">x</span>
+</code></pre></div></div>
+
+<h3 id="define">Define</h3>
+
+<p>The define forms desugar to a series of <code class="language-plaintext highlighter-rouge">let</code> or <code class="language-plaintext highlighter-rouge">letrec</code> expressions.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">desugarDefs</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Definition</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">Program</span> <span class="o">-&gt;</span> <span class="kt">Exp</span>
+<span class="n">desugarDefs</span> <span class="n">baseDefs</span> <span class="p">(</span><span class="kt">Program</span> <span class="n">defs</span> <span class="n">expr</span><span class="p">)</span> <span class="o">=</span> <span class="n">desugarProgram</span> <span class="n">newProg</span>
+  <span class="kr">where</span>
+    <span class="n">newProg</span> <span class="o">=</span> <span class="kt">Program</span> <span class="p">(</span><span class="n">baseDefs</span> <span class="o">++</span> <span class="n">defs</span><span class="p">)</span> <span class="n">expr</span>
+
+<span class="n">desugarProgram</span> <span class="o">::</span> <span class="kt">Program</span> <span class="o">-&gt;</span> <span class="kt">Exp</span>
+<span class="n">desugarProgram</span> <span class="p">(</span><span class="kt">Program</span> <span class="n">ds</span> <span class="n">e</span><span class="p">)</span> <span class="o">=</span> <span class="n">foldr</span> <span class="n">defToLet</span> <span class="n">e</span> <span class="n">ds</span>
+  <span class="kr">where</span>
+    <span class="n">defToLet</span> <span class="p">(</span><span class="kt">Def</span> <span class="n">name</span> <span class="n">expr</span><span class="p">)</span> <span class="n">body</span> <span class="o">=</span> <span class="kr">if</span> <span class="n">isFree</span> <span class="n">name</span> <span class="n">body</span>
+                                    <span class="kr">then</span> <span class="kr">if</span> <span class="n">isFree</span> <span class="n">name</span> <span class="n">expr</span>
+                                         <span class="kr">then</span> <span class="kt">Letrec</span> <span class="n">name</span> <span class="n">expr</span> <span class="n">body</span>
+                                         <span class="kr">else</span> <span class="kt">Let</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">expr</span><span class="p">)]</span> <span class="n">body</span>
+                                    <span class="kr">else</span> <span class="n">body</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">desugarDefs</code> integrates the definitions of a module into those of a program.</p>
+
+<p><code class="language-plaintext highlighter-rouge">desugarProgram</code> only let-binds a definition if it is used, and then only does a <code class="language-plaintext highlighter-rouge">letrec</code> if the name being defined is free in its definition. Otherwise it desugars to the much simpler <code class="language-plaintext highlighter-rouge">let</code> form.</p>
+
+<p>After this stage the program is represented as a single expression.</p>
+
+<h3 id="easy-prey-variables-application-and-numbers">Easy Prey: Variables, Application and Numbers</h3>
+
+<p>References and applications have a one-to-one mapping. Numbers become repeated function application.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compileExp</span> <span class="p">(</span><span class="kt">Var</span> <span class="n">name</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Ref</span> <span class="n">name</span>
+<span class="n">compileExp</span> <span class="p">(</span><span class="kt">Application</span> <span class="n">a</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">compileExp</span> <span class="n">a</span> <span class="p">`</span><span class="kt">App</span><span class="p">`</span> <span class="n">compileExp</span> <span class="n">b</span>
+<span class="n">compileExp</span> <span class="p">(</span><span class="kt">Num</span> <span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">churchNum</span> <span class="n">n</span>
+
+<span class="n">churchNum</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Node</span>
+<span class="n">churchNum</span> <span class="n">n</span> <span class="o">=</span> <span class="kt">Lam</span> <span class="s">"f"</span> <span class="o">$</span> <span class="kt">Lam</span> <span class="s">"x"</span> <span class="o">$</span> <span class="n">foldr</span> <span class="kt">App</span> <span class="p">(</span><span class="kt">Ref</span> <span class="s">"x"</span><span class="p">)</span> <span class="o">$</span> <span class="n">replicate</span> <span class="n">n</span> <span class="p">(</span><span class="kt">Ref</span> <span class="s">"f"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="multi-argument-lambdas">Multi-Argument Lambdas</h3>
+
+<p>The lambda form of the high level AST accepts multiple arguments. The lambda calculus only has single argument lambdas, so they need to be curried.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compileExp</span> <span class="p">(</span><span class="kt">Lambda</span> <span class="n">args</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">foldr</span> <span class="kt">Lam</span> <span class="p">(</span><span class="n">compileExp</span> <span class="n">body</span><span class="p">)</span> <span class="n">args</span>
+</code></pre></div></div>
+
+<p>This will change an expression like <code class="language-plaintext highlighter-rouge">(λ (x y z) body)</code> to <code class="language-plaintext highlighter-rouge">(λ (x) (λ (y) (λ (z) body)))</code>.</p>
+
+<p>Function application is already curried by the parser, so there is nothing to fix up there.</p>
+
+<h3 id="let">Let</h3>
+
+<p>A <code class="language-plaintext highlighter-rouge">let</code> is changed into an immediately applied lambda.</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">(let ([x 5]) (+ x 3))</code> becomes <code class="language-plaintext highlighter-rouge">((λ (x) (+ x 3)) 5)</code></li>
+  <li><code class="language-plaintext highlighter-rouge">(let ([x a] [y b]) body)</code> becomes <code class="language-plaintext highlighter-rouge">((λ (x) ((λ (y) body) b)) a)</code></li>
+</ul>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compileExp</span> <span class="p">(</span><span class="kt">Let</span> <span class="kt">[]</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">compileExp</span> <span class="n">body</span>
+<span class="n">compileExp</span> <span class="p">(</span><span class="kt">Let</span> <span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">v</span><span class="p">)</span><span class="o">:</span><span class="n">rest</span><span class="p">)</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="kt">Lam</span> <span class="n">n</span> <span class="n">inner</span> <span class="p">`</span><span class="kt">App</span><span class="p">`</span> <span class="n">compileExp</span> <span class="n">v</span>
+  <span class="kr">where</span>
+    <span class="n">inner</span> <span class="o">=</span> <span class="n">compileExp</span> <span class="p">(</span><span class="kt">Let</span> <span class="n">rest</span> <span class="n">body</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h3 id="letrec">Letrec</h3>
+
+<p>To understand how the Y combinator allows recursion, it is sufficient to know that it is a function with the property <code class="language-plaintext highlighter-rouge">(Y G) = (G (Y G))</code>.</p>
+
+<p>I’ll run through a quick example of defining a function <code class="language-plaintext highlighter-rouge">F</code> as some an arbitrary expression <code class="language-plaintext highlighter-rouge">exp</code> that can call <code class="language-plaintext highlighter-rouge">F</code>.
+The only way to bring a variable into scope is using lambda, so we might as well start there.</p>
+
+<p><code class="language-plaintext highlighter-rouge">(λ (F) exp)</code></p>
+
+<p>We can then use <code class="language-plaintext highlighter-rouge">Y</code> to get a definition for <code class="language-plaintext highlighter-rouge">F</code>.</p>
+
+<p><code class="language-plaintext highlighter-rouge">(Y (λ (F) exp))</code> expands to <code class="language-plaintext highlighter-rouge">((λ (F) exp) (Y (λ (F) exp)))</code> in the same way that <code class="language-plaintext highlighter-rouge">(Y G)</code> expands to <code class="language-plaintext highlighter-rouge">(G (Y G))</code>. We can then go ahead and evaluate <code class="language-plaintext highlighter-rouge">exp</code> with <code class="language-plaintext highlighter-rouge">F</code> bound to <code class="language-plaintext highlighter-rouge">(Y (λ (F) exp))</code>. If ever <code class="language-plaintext highlighter-rouge">F</code> is called inside <code class="language-plaintext highlighter-rouge">exp</code>, the Y combinator will expand again to produce another definition of <code class="language-plaintext highlighter-rouge">F</code> to call “recursively”.</p>
+
+<p>The feeling I get about the Y combinator is this. Every time you try to evaluate <code class="language-plaintext highlighter-rouge">(Y G)</code> it expands to <code class="language-plaintext highlighter-rouge">(G (Y G))</code>, allowing you to continue a recursive computation in <code class="language-plaintext highlighter-rouge">G</code> for as long as you wish. From the interpreter’s perspective its not really recursion, its just expanding a copy of the same function definition as many times as necessary.</p>
+
+<p>In the terms of the <code class="language-plaintext highlighter-rouge">(λ (F) exp)</code> example <code class="language-plaintext highlighter-rouge">(letrec (F exp) body)</code> is equivalent to <code class="language-plaintext highlighter-rouge">(let ([F (Y (λ (F) exp))]) body)</code></p>
+
+<p>My first thought when I saw this was: Hang on! The <code class="language-plaintext highlighter-rouge">F</code> bound in that let and the <code class="language-plaintext highlighter-rouge">F</code> in the definition aren’t the same. That’s variable shadowing!</p>
+
+<p>And this is true from the standpoint of the interpreter, but the property of the Y combinator means that the two definitions of <code class="language-plaintext highlighter-rouge">F</code> are equivalent. Which is why it is a definition of recursion without recursion.</p>
+
+<p>Here is the implementation in the compiler. The definition of the Y combinator still seems a bit like devil magic to me, but I thought <a href="https://cs.stackexchange.com/a/9651">this answer</a> and <a href="http://matt.might.net/articles/implementation-of-recursive-fixed-point-y-combinator-in-javascript-for-memoization/">Matt Might’s post</a> made a lot of sense.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">compileExp</span> <span class="p">(</span><span class="kt">Letrec</span> <span class="n">name</span> <span class="n">binding</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">compileExp</span> <span class="n">recursiveLet</span>
+  <span class="kr">where</span>
+    <span class="n">recursiveLet</span> <span class="o">=</span> <span class="kt">Let</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">y</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span> <span class="kt">Lambda</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="n">binding</span><span class="p">)]</span> <span class="n">body</span>
+
+<span class="c1">-- (λy.λF.F (λx.y y F x))(λy.λF.F (λx.y y F x))</span>
+<span class="n">y</span> <span class="o">::</span> <span class="kt">Exp</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">term</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span> <span class="n">term</span>
+  <span class="kr">where</span>
+    <span class="n">term</span> <span class="o">=</span> <span class="kt">Lambda</span> <span class="p">[</span><span class="s">"y"</span><span class="p">,</span> <span class="s">"F"</span><span class="p">]</span> <span class="o">$</span> <span class="kt">Var</span> <span class="s">"F"</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span> <span class="kt">Lambda</span> <span class="p">[</span><span class="s">"x"</span><span class="p">]</span> <span class="n">innerApp</span>
+    <span class="n">innerApp</span> <span class="o">=</span> <span class="kt">Var</span> <span class="s">"y"</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span>
+               <span class="kt">Var</span> <span class="s">"y"</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span>
+               <span class="kt">Var</span> <span class="s">"F"</span> <span class="p">`</span><span class="kt">Application</span><span class="p">`</span>
+               <span class="kt">Var</span> <span class="s">"x"</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="interpreter">Interpreter</h2>
+
+<p>The task of the interpreter is to reduce a lambda term. But what does it mean to be reduced? Presumably we would like a result that can be easily interpreted by a human. The most important reduction we can do is a beta reduction, which is the same as a function call. <code class="language-plaintext highlighter-rouge">(λx.body) arg</code> would reduce to <code class="language-plaintext highlighter-rouge">body</code> with a new variable in scope <code class="language-plaintext highlighter-rouge">x = arg</code> (with some caveats about what variables are in scope for <code class="language-plaintext highlighter-rouge">arg</code>).</p>
+
+<p>Beta-reduction is good enough for some programs. <code class="language-plaintext highlighter-rouge">(= (+ (* 3 3) (* 4 4)) (* 5 5))</code> gives <code class="language-plaintext highlighter-rouge">λt.λf.t</code>, which is the church encoding for true.</p>
+
+<p>Boolean results are pretty easy to see, but numbers get out of hand really quickly. The simple program <code class="language-plaintext highlighter-rouge">(+ 2 3)</code> results in <code class="language-plaintext highlighter-rouge">(λb.(λa.λf.λx.a f (b f x)) (λf.λx.f (f x))) (λf.λx.f (f (f x)))</code>. The interpreter didn’t even do any work here. It has essentially told us that the answer is 2+3.</p>
+
+<p>This is clearly not a solution. Instead, the interpreter should give an answer as a Haskell primitive. With the knowledge that <code class="language-plaintext highlighter-rouge">(* 6 7)</code> should be a number we can un-church the result to get <code class="language-plaintext highlighter-rouge">42</code>.</p>
+
+<h3 id="call-by-need">Call by Need</h3>
+<p>I said earlier that the interpreter is lazy. The goal is to make programs like <code class="language-plaintext highlighter-rouge">((λ (_) 42) hang)</code> work. When a function call is evaluated the argument is stored in a thunk. If ever that argument is used, then its value is computed, and the thunk is replaced with the computed value.</p>
+
+<p>This requires state.</p>
+
+<p>Data stored in the environment is either a thunk, or a forced result.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Box</span> <span class="n">s</span> <span class="o">=</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span> <span class="o">|</span> <span class="kt">Thunk</span> <span class="kt">Node</span> <span class="p">(</span><span class="kt">Env</span> <span class="n">s</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>I use <code class="language-plaintext highlighter-rouge">ST</code> for mutation of the environment. All of those <code class="language-plaintext highlighter-rouge">s</code> variables are references to the state thread used to make sure state does not escape the <code class="language-plaintext highlighter-rouge">ST</code> monad. The environment is a map of variable names to a box.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">type</span> <span class="kt">Env</span> <span class="n">s</span> <span class="o">=</span> <span class="kt">Map</span> <span class="kt">String</span> <span class="p">(</span><span class="kt">STRef</span> <span class="n">s</span> <span class="p">(</span><span class="kt">Box</span> <span class="n">s</span><span class="p">))</span>
+</code></pre></div></div>
+
+<h3 id="why-use-st">Why Use ST?</h3>
+<p>All of the other examples of interpreters I could find online used <code class="language-plaintext highlighter-rouge">IORef</code> instead of <code class="language-plaintext highlighter-rouge">STRef</code> for mutable boxes to store thunk results.</p>
+
+<p>The reason they gave was that the interpreter was already dealing with <code class="language-plaintext highlighter-rouge">IO</code>. That is totally reasonable and makes their code much more simple.</p>
+
+<p>Unfortunately my interpreter is not coupled at all to <code class="language-plaintext highlighter-rouge">IO</code>, so I had to use <code class="language-plaintext highlighter-rouge">ST</code>. This led to some interesting issues with impredictive types, and I ended up needing the Rank2Types language extension. More on that later.</p>
+
+<h3 id="result-type">Result Type</h3>
+
+<p>The result of a program could be a number, boolean, closure, or a list of results. I also have a function result type to help un-churching numbers and lists.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">=</span> <span class="kt">Clos</span> <span class="kt">String</span> <span class="kt">Node</span> <span class="p">(</span><span class="kt">Env</span> <span class="n">s</span><span class="p">)</span>
+              <span class="o">|</span> <span class="kt">RFun</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">ExceptT</span> <span class="kt">String</span> <span class="p">(</span><span class="kt">ST</span> <span class="n">s</span><span class="p">)</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">))</span>
+              <span class="o">|</span> <span class="kt">RNum</span> <span class="kt">Integer</span>
+              <span class="o">|</span> <span class="kt">RBool</span> <span class="kt">Bool</span>
+              <span class="o">|</span> <span class="kt">RPair</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span>
+              <span class="o">|</span> <span class="kt">REmpty</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">RFun</code> type transforms a result, and can possibly fail. The increment operator needed to decode numbers is defined as an <code class="language-plaintext highlighter-rouge">RFun</code>.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plus1</span> <span class="o">::</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">ExceptT</span> <span class="kt">String</span> <span class="p">(</span><span class="kt">ST</span> <span class="n">s</span><span class="p">)</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">plus1</span> <span class="p">(</span><span class="kt">RNum</span> <span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="o">$</span> <span class="kt">RNum</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">plus1</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Cannot increment non-number type"</span>
+</code></pre></div></div>
+
+<p>The type <code class="language-plaintext highlighter-rouge">ExceptT String (ST s) (Result s)</code> is a bit long and I use it a lot, so I made an alias.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">type</span> <span class="kt">EST</span> <span class="n">s</span> <span class="n">a</span> <span class="o">=</span> <span class="kt">ExceptT</span> <span class="kt">String</span> <span class="p">(</span><span class="kt">ST</span> <span class="n">s</span><span class="p">)</span> <span class="n">a</span>
+</code></pre></div></div>
+
+<h3 id="interpreting-an-expression">Interpreting An expression</h3>
+
+<p>The meat of the interpreter is the function <code class="language-plaintext highlighter-rouge">lazyInterp</code></p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">lazyInterp</span> <span class="o">::</span> <span class="kt">Env</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">lazyInterp</span> <span class="n">env</span> <span class="p">(</span><span class="kt">Lam</span> <span class="n">arg</span> <span class="n">body</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="o">$</span> <span class="kt">Clos</span> <span class="n">arg</span> <span class="n">body</span> <span class="n">env</span>
+<span class="n">lazyInterp</span> <span class="n">env</span> <span class="p">(</span><span class="kt">Ref</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">maybe</span> <span class="p">(</span><span class="n">scopeExcept</span> <span class="n">x</span><span class="p">)</span> <span class="n">force</span> <span class="p">(</span><span class="kt">Map</span><span class="o">.</span><span class="n">lookup</span> <span class="n">x</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">lazyInterp</span> <span class="n">env</span> <span class="p">(</span><span class="kt">App</span> <span class="n">f</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">lazyInterp</span> <span class="n">env</span> <span class="n">f</span> <span class="o">&gt;&gt;=</span> <span class="p">(`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Thunk</span> <span class="n">x</span> <span class="n">env</span><span class="p">)</span>
+
+<span class="n">scopeExcept</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="n">a</span>
+<span class="n">scopeExcept</span> <span class="o">=</span> <span class="kt">ExceptT</span> <span class="o">.</span> <span class="n">return</span> <span class="o">.</span> <span class="n">scopeError</span>
+</code></pre></div></div>
+
+<p>There are only three forms, so only three cases to handle.</p>
+
+<ul>
+  <li>Lambdas immediately build a closure</li>
+  <li>References force a box from the environment, possibly failing if there is no variable in scope</li>
+  <li>Applications force the function, build a thunk for the argument, and then call out to an application function.</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">scopeExcept</code> function just changes the type of <code class="language-plaintext highlighter-rouge">scopeError</code> to <code class="language-plaintext highlighter-rouge">EST s a</code> instead of <code class="language-plaintext highlighter-rouge">Either String a</code> like is used the the rest of the pipeline.</p>
+
+<p>To force a box, we check if its a thunk, if so, call <code class="language-plaintext highlighter-rouge">lazyInterp</code> and write the result.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">force</span> <span class="o">::</span> <span class="kt">STRef</span> <span class="n">s</span> <span class="p">(</span><span class="kt">Box</span> <span class="n">s</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">force</span> <span class="n">ref</span> <span class="o">=</span> <span class="n">lift</span> <span class="p">(</span><span class="n">readSTRef</span> <span class="n">ref</span><span class="p">)</span> <span class="o">&gt;&gt;=</span> <span class="n">handleBox</span>
+  <span class="kr">where</span>
+    <span class="n">handleBox</span> <span class="p">(</span><span class="kt">Forced</span> <span class="n">r</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="n">r</span>
+    <span class="n">handleBox</span> <span class="p">(</span><span class="kt">Thunk</span> <span class="n">node</span> <span class="n">env</span><span class="p">)</span> <span class="o">=</span> <span class="kr">do</span>
+      <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">lazyInterp</span> <span class="n">env</span> <span class="n">node</span>
+      <span class="n">lift</span> <span class="o">$</span> <span class="n">writeSTRef</span> <span class="n">ref</span> <span class="p">(</span><span class="kt">Forced</span> <span class="n">result</span><span class="p">)</span>
+      <span class="n">return</span> <span class="n">result</span>
+</code></pre></div></div>
+
+<p>The type of the <code class="language-plaintext highlighter-rouge">app</code> function may seem a bit strange. I wanted to use it in the interpreter, and also to un-church results. Having it take a box lets me do this.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">app</span> <span class="o">::</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">Box</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span><span class="p">)</span>
+<span class="n">app</span> <span class="p">(</span><span class="kt">RFun</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="kt">Forced</span> <span class="n">x</span><span class="p">)</span> <span class="o">=</span> <span class="n">f</span> <span class="n">x</span>
+<span class="n">app</span> <span class="p">(</span><span class="kt">RFun</span> <span class="n">f</span><span class="p">)</span> <span class="p">(</span><span class="kt">Thunk</span> <span class="n">node</span> <span class="n">env</span><span class="p">)</span> <span class="o">=</span> <span class="n">lazyInterp</span> <span class="n">env</span> <span class="n">node</span> <span class="o">&gt;&gt;=</span> <span class="n">f</span>
+<span class="n">app</span> <span class="p">(</span><span class="kt">Clos</span> <span class="n">arg</span> <span class="n">body</span> <span class="n">env</span><span class="p">)</span> <span class="n">box</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="n">argRef</span> <span class="o">&lt;-</span> <span class="n">lift</span> <span class="o">$</span> <span class="n">newSTRef</span> <span class="n">box</span>
+  <span class="kr">let</span> <span class="n">extendedEnv</span> <span class="o">=</span> <span class="kt">Map</span><span class="o">.</span><span class="n">insert</span> <span class="n">arg</span> <span class="n">argRef</span> <span class="n">env</span>
+  <span class="n">lazyInterp</span> <span class="n">extendedEnv</span> <span class="n">body</span>
+<span class="n">app</span> <span class="kr">_</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Cannot apply non-function type"</span>
+</code></pre></div></div>
+
+<p>Unlike closures, applying an <code class="language-plaintext highlighter-rouge">RFun</code> is strict in its argument. Fortunately <code class="language-plaintext highlighter-rouge">RFun</code> always needs its argument so this behavior is fine.</p>
+
+<h3 id="extracting-a-result">Extracting a Result</h3>
+
+<p>Once an expression has been interpreted, it is a closure. I then use an extraction function to end up with a Haskell literal.</p>
+
+<p>The type of all the extractors is <code class="language-plaintext highlighter-rouge">Result s -&gt; EST s a</code>, where a is the type of the literal. There are extractors for integers, booleans, and lists.</p>
+
+<p>Integers can be extracted by applying the increment function and zero to the church encoded number.</p>
+
+<p><code class="language-plaintext highlighter-rouge">(n inc 0)</code></p>
+
+<p>Operations in our interpreter can fail, so each application needs to use bind. Once we have the final result we can unwrap it from the <code class="language-plaintext highlighter-rouge">Result</code> data type.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">intExtractor</span> <span class="o">::</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="kt">Integer</span>
+<span class="n">intExtractor</span> <span class="n">res</span> <span class="o">=</span> <span class="n">res</span> <span class="p">`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">RFun</span> <span class="n">plus1</span><span class="p">)</span>
+               <span class="o">&gt;&gt;=</span> <span class="p">(`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">RNum</span> <span class="mi">0</span><span class="p">))</span>
+               <span class="o">&gt;&gt;=</span> <span class="n">getNum</span>
+  <span class="kr">where</span>
+    <span class="n">plus1</span> <span class="p">(</span><span class="kt">RNum</span> <span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="o">$</span> <span class="kt">RNum</span> <span class="p">(</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">plus1</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Cannot increment non-number type"</span>
+    <span class="n">getNum</span> <span class="p">(</span><span class="kt">RNum</span> <span class="n">n</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="n">n</span>
+    <span class="n">getNum</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Non-number result"</span>
+</code></pre></div></div>
+
+<p>Booleans have a similar story, but here we apply the values True then False <code class="language-plaintext highlighter-rouge">(b True False)</code>.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">boolExtractor</span> <span class="o">::</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="kt">Bool</span>
+<span class="n">boolExtractor</span> <span class="n">res</span> <span class="o">=</span> <span class="n">res</span> <span class="p">`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">RBool</span> <span class="kt">True</span><span class="p">)</span>
+                <span class="o">&gt;&gt;=</span> <span class="p">(`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">RBool</span> <span class="kt">False</span><span class="p">))</span>
+                <span class="o">&gt;&gt;=</span> <span class="n">getBool</span>
+  <span class="kr">where</span>
+    <span class="n">getBool</span> <span class="p">(</span><span class="kt">RBool</span> <span class="n">b</span><span class="p">)</span> <span class="o">=</span> <span class="n">return</span> <span class="n">b</span>
+    <span class="n">getBool</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Non-boolean result"</span>
+</code></pre></div></div>
+
+<p>Lists are more complicated. The list extractor first needs an extractor for the elements in the list. This ensures you can extract arbitrarily nested lists.</p>
+
+<p>Lists are encoded as a function that takes something to do with a head and a tail and a result if the list is empty. To extract a literal list from this structure we apply an <code class="language-plaintext highlighter-rouge">onCons</code> function and the <code class="language-plaintext highlighter-rouge">REmpty</code> result.</p>
+
+<p><code class="language-plaintext highlighter-rouge">onCons</code> is a function that takes two results and yields an <code class="language-plaintext highlighter-rouge">RPair</code>. It looks a little funny because it has to be curried to fit into the application model of the interpreter.</p>
+
+<p>To extract a list from a pair we run the extractor on the first of the pair to get a literal, and run the list extractor on the tail.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">listExtractor</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+<span class="n">listExtractor</span> <span class="n">ex</span> <span class="n">res</span> <span class="o">=</span> <span class="n">res</span> <span class="p">`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="p">(</span><span class="kt">RFun</span> <span class="n">onCons</span><span class="p">)</span>
+                   <span class="o">&gt;&gt;=</span> <span class="p">(`</span><span class="n">app</span><span class="p">`</span> <span class="kt">Forced</span> <span class="kt">REmpty</span><span class="p">)</span>
+                   <span class="o">&gt;&gt;=</span> <span class="n">pairToList</span>
+  <span class="kr">where</span>
+    <span class="n">onCons</span> <span class="n">hd</span> <span class="o">=</span> <span class="n">return</span> <span class="o">.</span> <span class="kt">RFun</span> <span class="o">$</span> <span class="n">return</span> <span class="o">.</span> <span class="kt">RPair</span> <span class="n">hd</span>
+    <span class="n">pairToList</span> <span class="kt">REmpty</span> <span class="o">=</span> <span class="n">return</span> <span class="kt">[]</span>
+    <span class="n">pairToList</span> <span class="p">(</span><span class="kt">RPair</span> <span class="n">hd</span> <span class="n">tl</span><span class="p">)</span> <span class="o">=</span> <span class="kr">do</span>
+      <span class="n">x</span> <span class="o">&lt;-</span> <span class="n">ex</span> <span class="n">hd</span>
+      <span class="n">xs</span> <span class="o">&lt;-</span> <span class="n">listExtractor</span> <span class="n">ex</span> <span class="n">tl</span>
+      <span class="n">return</span> <span class="p">(</span><span class="n">x</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span>
+    <span class="n">pairToList</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Non-list result"</span>
+</code></pre></div></div>
+
+<p>I lied a little bit. There is one more extractor.</p>
+
+<p>My unit tests for early versions of the interpreter expected the output to be a <code class="language-plaintext highlighter-rouge">Node</code>, not the <code class="language-plaintext highlighter-rouge">Result</code> type I ended up with. Instead of rewriting all of the tests to expect a closure, I extract a <code class="language-plaintext highlighter-rouge">Node</code> from a closure.</p>
+
+<p>The only variables that need to be bound from the closure’s environment are the ones that are free in the body. Dropping the environment from the closure, and instead binding those variables with immediately applied lambdas gets the job done.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">unwrap</span> <span class="o">::</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="kt">Node</span>
+<span class="n">unwrap</span> <span class="p">(</span><span class="kt">Clos</span> <span class="n">arg</span> <span class="n">body</span> <span class="n">env</span><span class="p">)</span> <span class="o">=</span> <span class="n">bindAll</span> <span class="n">toBind</span> <span class="o">$</span> <span class="kt">Lam</span> <span class="n">arg</span> <span class="n">body</span>
+  <span class="kr">where</span>
+    <span class="n">toBind</span> <span class="o">=</span> <span class="kt">Set</span><span class="o">.</span><span class="n">toList</span> <span class="o">$</span> <span class="n">arg</span> <span class="p">`</span><span class="kt">Set</span><span class="o">.</span><span class="n">delete</span><span class="p">`</span> <span class="n">freeVars</span> <span class="n">body</span>
+    <span class="n">bindAll</span> <span class="kt">[]</span> <span class="n">expr</span> <span class="o">=</span> <span class="n">return</span> <span class="n">expr</span>
+    <span class="n">bindAll</span> <span class="p">(</span><span class="n">x</span><span class="o">:</span><span class="n">xs</span><span class="p">)</span> <span class="n">expr</span> <span class="o">=</span> <span class="kr">do</span>
+      <span class="n">binding</span> <span class="o">&lt;-</span> <span class="n">maybe</span> <span class="p">(</span><span class="n">scopeExcept</span> <span class="n">x</span><span class="p">)</span> <span class="n">force</span> <span class="o">$</span> <span class="kt">Map</span><span class="o">.</span><span class="n">lookup</span> <span class="n">x</span> <span class="n">env</span>
+      <span class="n">rawBinding</span> <span class="o">&lt;-</span> <span class="n">unwrap</span> <span class="n">binding</span>
+      <span class="n">bindAll</span> <span class="n">xs</span> <span class="o">$</span> <span class="kt">Lam</span> <span class="n">x</span> <span class="n">expr</span> <span class="p">`</span><span class="kt">App</span><span class="p">`</span> <span class="n">rawBinding</span>
+<span class="n">unwrap</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">throwE</span> <span class="s">"Cannot unwrap non-closure type"</span>
+</code></pre></div></div>
+
+<p>These three extractors result in <code class="language-plaintext highlighter-rouge">EST s lit</code>, not <code class="language-plaintext highlighter-rouge">Either String lit</code> like the rest of the pipeline. The last step is to run the stateful computation using <code class="language-plaintext highlighter-rouge">runST</code>.</p>
+
+<h3 id="running-a-stateful-computation">Running a Stateful Computation</h3>
+
+<p>The only drawback to <code class="language-plaintext highlighter-rouge">ST</code> is the type of <code class="language-plaintext highlighter-rouge">runST</code>.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">runST</span> <span class="o">::</span> <span class="n">forall</span> <span class="n">a</span><span class="o">.</span> <span class="p">(</span><span class="n">forall</span> <span class="n">s</span><span class="o">.</span> <span class="kt">ST</span> <span class="n">s</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">a</span>
+</code></pre></div></div>
+
+<p>Functions in Haskell normally only have type variables on the outside of a type.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">func</span> <span class="o">::</span> <span class="n">forall</span> <span class="n">a</span> <span class="n">b</span><span class="o">.</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="n">b</span>
+</code></pre></div></div>
+
+<p>They type of <code class="language-plaintext highlighter-rouge">runST</code> ensures that the resulting type cannot have any reference to the state thread, <code class="language-plaintext highlighter-rouge">s</code>.</p>
+
+<p>The type <code class="language-plaintext highlighter-rouge">forall s a. ST s a -&gt; a</code> could unify to <code class="language-plaintext highlighter-rouge">ST s (Result s) -&gt; Result s</code>. This would be bad because a reference to the state thread would escape the stateful computation. This could cause side effects, and if you want that then Haskell is not the right language for you.</p>
+
+<p>The type <code class="language-plaintext highlighter-rouge">forall a. (forall s. ST s a) -&gt; a</code> cannot unify to <code class="language-plaintext highlighter-rouge">ST s (Result s) -&gt; Result s</code> because the type variable <code class="language-plaintext highlighter-rouge">s</code> is not in scope on the right side of the function. This ensures that no references to the state thread escape.</p>
+
+<p>Types of this form are beyond Haskell’s type inference engine. There is a special type rule for <code class="language-plaintext highlighter-rouge">$</code> that allows code like <code class="language-plaintext highlighter-rouge">runST $ do {...}</code>. Unfortunately, the function for extracting lists requires <code class="language-plaintext highlighter-rouge">s</code> in its type signature, and the additional powers of the <code class="language-plaintext highlighter-rouge">$</code> operator are not enough to make the type checker succeed.</p>
+
+<p>To make this code work, I enabled the <code class="language-plaintext highlighter-rouge">{-# LANGUAGE Rank2Types #-}</code> extension. This allows all the extraction functions to have types that match the rest of the pipeline.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">extract</span> <span class="o">::</span> <span class="p">(</span><span class="n">forall</span> <span class="n">s</span><span class="o">.</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="n">a</span>
+<span class="n">extract</span> <span class="n">ex</span> <span class="n">input</span> <span class="o">=</span> <span class="n">runST</span> <span class="o">$</span> <span class="n">runExceptT</span> <span class="p">(</span><span class="n">lazyInterp</span> <span class="kt">Map</span><span class="o">.</span><span class="n">empty</span> <span class="n">input</span> <span class="o">&gt;&gt;=</span> <span class="n">ex</span><span class="p">)</span>
+
+<span class="n">extractInt</span> <span class="o">::</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="kt">Integer</span>
+<span class="n">extractInt</span> <span class="o">=</span> <span class="n">extract</span> <span class="n">intExtractor</span>
+
+<span class="n">extractBool</span> <span class="o">::</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="kt">Bool</span>
+<span class="n">extractBool</span> <span class="o">=</span> <span class="n">extract</span> <span class="n">boolExtractor</span>
+
+<span class="n">extractList</span> <span class="o">::</span> <span class="p">(</span><span class="n">forall</span> <span class="n">s</span><span class="o">.</span> <span class="kt">Result</span> <span class="n">s</span> <span class="o">-&gt;</span> <span class="kt">EST</span> <span class="n">s</span> <span class="n">a</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span>
+<span class="n">extractList</span> <span class="n">ex</span> <span class="o">=</span> <span class="n">extract</span> <span class="o">$</span> <span class="n">listExtractor</span> <span class="n">ex</span>
+
+<span class="n">interp</span> <span class="o">::</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="kt">Node</span>
+<span class="n">interp</span> <span class="o">=</span> <span class="n">extract</span> <span class="n">unwrap</span>
+</code></pre></div></div>
+
+<p>To interpret and extract an int from a compiled program you could now call <code class="language-plaintext highlighter-rouge">extractInt prog</code> and get either an int or an error message.</p>
+
+<hr />
+
+<h2 id="tying-it-all-together">Tying it all Together</h2>
+
+<p>Each piece of the pipeline transforms the program until it is a Haskell literal. The following example shows how each piece fits together by following a simple program through each stage.</p>
+
+<h3 id="the-pieces">The Pieces</h3>
+
+<p>Start with the input program <code class="language-plaintext highlighter-rouge">(cons #t empty)</code>.</p>
+
+<p>Parse the program to get:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Program [] (Application (Application (Var "cons") (Var "#t")) (Var "empty"))
+</code></pre></div></div>
+
+<p>The internal data structures aren’t very easy to read, so the rest of this is in nicer notation.</p>
+
+<p>Desugar the program form to a single expression.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(let ([#t (λ (t f) t)])
+  (let ([cons (λ (h t)
+                (λ (f _)
+                  ((f h) t)))])
+    (let ([empty (λ (_ e) e)])
+      (cons #t empty))))
+</code></pre></div></div>
+
+<p>Compile the program to the lambda calculus.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(λ#t.(λcons.(λempty.cons #t empty)
+            (λ_.λe.e))
+     (λh.λt.λf.λ_.f h t))
+(λt.λf.t)
+</code></pre></div></div>
+
+<p>Interpret the program to get a closure.</p>
+
+<pre><code class="language-raw">{λf.λ_.f h t, [t={λ_.λe.e,[]}, h={λt.λf.t,[]}]}
+</code></pre>
+
+<p>Extract a pair from the closure.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt; {λt.λf.t,[]} x {λ_.λe.e,[]} &gt;
+</code></pre></div></div>
+
+<p>Finally, extract a list from the pair.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[True]
+</code></pre></div></div>
+
+<h3 id="the-interface">The Interface</h3>
+
+<p>I wanted to run programs from strings, and from files in the repl. I also wanted to interpret a program and pretty print the resulting lambda. <code class="language-plaintext highlighter-rouge">runProgram</code>, <code class="language-plaintext highlighter-rouge">runFile</code> and <code class="language-plaintext highlighter-rouge">prettyProgram</code> are the functions that do these things. <code class="language-plaintext highlighter-rouge">runDisplayProgram</code> contains all the common code between them.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">type</span> <span class="kt">Interp</span> <span class="n">a</span> <span class="o">=</span> <span class="kt">Node</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">String</span> <span class="n">a</span>
+
+<span class="n">runDisplayProgram</span> <span class="o">::</span> <span class="p">(</span><span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Interp</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">runDisplayProgram</span> <span class="n">display</span> <span class="n">filename</span> <span class="n">input</span> <span class="n">extractor</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="n">base</span> <span class="o">&lt;-</span> <span class="n">readBase</span>
+  <span class="n">either</span> <span class="n">putStrLn</span> <span class="n">display</span> <span class="o">$</span> <span class="kr">do</span>
+    <span class="n">defs</span> <span class="o">&lt;-</span> <span class="n">base</span>
+    <span class="n">prog</span> <span class="o">&lt;-</span> <span class="n">parseProgram</span> <span class="n">filename</span> <span class="n">input</span>
+    <span class="n">compiled</span> <span class="o">&lt;-</span> <span class="n">compile</span> <span class="n">defs</span> <span class="n">prog</span>
+    <span class="n">extractor</span> <span class="n">compiled</span>
+
+<span class="n">prettyProgram</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">prettyProgram</span> <span class="n">prog</span> <span class="o">=</span> <span class="n">runDisplayProgram</span> <span class="p">(</span><span class="n">putStrLn</span> <span class="o">.</span> <span class="n">pretty</span><span class="p">)</span> <span class="s">"input"</span> <span class="n">prog</span> <span class="n">interp</span>
+
+<span class="n">runProgram</span> <span class="o">::</span> <span class="kt">Show</span> <span class="n">a</span> <span class="o">=&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Interp</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">runProgram</span> <span class="o">=</span> <span class="n">runDisplayProgram</span> <span class="n">print</span> <span class="s">"input"</span>
+
+<span class="n">runFile</span> <span class="o">::</span> <span class="kt">Show</span> <span class="n">a</span> <span class="o">=&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">Interp</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">runFile</span> <span class="n">filename</span> <span class="n">extractor</span> <span class="o">=</span> <span class="kr">do</span>
+  <span class="n">input</span> <span class="o">&lt;-</span> <span class="n">readFile</span> <span class="n">filename</span>
+  <span class="n">runDisplayProgram</span> <span class="n">print</span> <span class="n">filename</span> <span class="n">input</span> <span class="n">extractor</span>
+</code></pre></div></div>
+
+<p>The outer <code class="language-plaintext highlighter-rouge">do</code> in <code class="language-plaintext highlighter-rouge">runDisplayProgram</code> is for the <code class="language-plaintext highlighter-rouge">IO</code> monad. The inner one is for <code class="language-plaintext highlighter-rouge">Either</code>. To run the whole pipeline, first grab the base definitions while in <code class="language-plaintext highlighter-rouge">IO</code>, then drop into <code class="language-plaintext highlighter-rouge">Either</code>. Grab the base definitions, then parse the input, then compile the base definitions and the program together, and finally run the interpreter.</p>
+
+<p>My original goal when writing this was to run the <a href="https://xkcd.com/710/">collatz sequence</a>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">step</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">even?</span> <span class="nv">n</span><span class="p">)</span>
+      <span class="p">(</span><span class="nb">/</span> <span class="nv">n</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="p">(</span><span class="nb">+</span> <span class="p">(</span><span class="nb">*</span> <span class="nv">n</span> <span class="mi">3</span><span class="p">)</span> <span class="mi">1</span><span class="p">)))</span>
+
+<span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">collatz</span> <span class="nv">n</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">&lt;=</span> <span class="nv">n</span> <span class="mi">1</span><span class="p">)</span>
+      <span class="mi">0</span>
+      <span class="p">(</span><span class="nb">+</span> <span class="mi">1</span> <span class="p">(</span><span class="nf">collatz</span> <span class="p">(</span><span class="nf">step</span> <span class="nv">n</span><span class="p">)))))</span>
+
+<span class="p">(</span><span class="nb">map</span> <span class="nv">collatz</span> <span class="p">(</span><span class="nf">range</span> <span class="mi">1</span> <span class="mi">15</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Save that to resources/collatz.lc, then run with</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>λ&gt; runFile "resources/collatz.lc" (extractList intExtractor)
+[0,1,7,2,5,8,16,3,19,6,14,9,9,17]
+</code></pre></div></div>
+
+<p>Tada! Those are the stopping times for the numbers 1 to 15.</p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

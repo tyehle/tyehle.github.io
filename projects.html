@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Projects</title>
+  <meta name="description" content="This is my personal site containing projects and writing about things I find interesting.
+">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/projects">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="current-page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post">
+
+  <header class="page-header">
+    <h1 class="post-title">Projects</h1>
+  </header>
+
+  <div class="post-content">
+  	<hr>
+    <p>This is a categorized list of much of the software I have worked on. Some things are listed twice if I wasn’t sure what category to put them in. Source code for a lot of these projects can also be found on <a href="https://github.com/tyehle">my github profile</a>.</p>
+
+<ul id="markdown-toc">
+  <li><a href="#functional-programming" id="markdown-toc-functional-programming">Functional Programming</a></li>
+  <li><a href="#hardware" id="markdown-toc-hardware">Hardware</a></li>
+  <li><a href="#graphics" id="markdown-toc-graphics">Graphics</a></li>
+  <li><a href="#data-engineering" id="markdown-toc-data-engineering">Data Engineering</a></li>
+  <li><a href="#robotics" id="markdown-toc-robotics">Robotics</a></li>
+  <li><a href="#machine-learning-and-ai" id="markdown-toc-machine-learning-and-ai">Machine Learning and AI</a>    <ul>
+      <li><a href="#thesis" id="markdown-toc-thesis">Thesis</a></li>
+    </ul>
+  </li>
+  <li><a href="#simulation" id="markdown-toc-simulation">Simulation</a></li>
+  <li><a href="#complex-networks" id="markdown-toc-complex-networks">Complex Networks</a>    <ul>
+      <li><a href="#publications" id="markdown-toc-publications">Publications</a></li>
+    </ul>
+  </li>
+</ul>
+
+<hr />
+
+<h2 id="functional-programming">Functional Programming</h2>
+<ul>
+  <li>A compiler for a simple language with lambdas and a garbage collector using LLVM [ <a href="https://github.com/tyehle/llvm-lambda">source</a> ]</li>
+  <li>A <a href="/articles/lambda-compiler">compiler from scheme to the λ-calculus</a> [ <a href="https://github.com/tyehle/lambda">source</a> ]</li>
+  <li>Most of a <a href="/articles/python_compiler">Python compiler</a>. This project was for a compilers class, and we implemented a lexer, parser, desugarer, and normalizer.</li>
+  <li>A <a href="/articles/dominion">Dominion AI</a> [ <a href="https://github.com/tyehle/dominion">source</a> ]</li>
+  <li>An interesting sudoku solver in Haskell [ <a href="https://github.com/tyehle/sudoku">source</a> ]</li>
+  <li>An implementation of Java style interfaces in an interpreted lisp-like language</li>
+  <li>A regex matcher using derivatives in JavaScript</li>
+</ul>
+
+<hr />
+
+<h2 id="hardware">Hardware</h2>
+<ul>
+  <li>A static RAM cell demo board [ <a href="https://github.com/tyehle/sram-cell">source</a> ]</li>
+  <li>An LED matrix prototyping panel for [ <a href="https://github.com/tyehle/led-matrix/blob/master/led-panel/README.md">source</a> ]</li>
+  <li>A dance detector [ <a href="https://github.com/tyehle/dance-detector">source</a> ]</li>
+  <li>A touch sensative necklace pendant [ <a href="https://github.com/tyehle/touch-circuit/tree/master/touch-circuit-v1">source</a> ]</li>
+  <li>A half adder using resistor-transistor logic [ <a href="https://github.com/tyehle/rtl-half-adder">source</a> ]</li>
+  <li>A sunrise alarm clock [ <a href="https://github.com/tyehle/sunrise">source</a> ]</li>
+</ul>
+
+<hr />
+
+<h2 id="graphics">Graphics</h2>
+<ul>
+  <li>A 3D engine with a nonlinear projection, written in Rust and OpenGL [ <a href="https://github.com/tyehle/fieldgame-rust">source</a> ]</li>
+  <li>A prototype version of the 3D engine written in pure scala with a demo game on top [ <a href="https://github.com/tyehle/fieldgame">source</a> ]</li>
+  <li>An ASCII art generator [ <a href="https://bitbucket.org/tobinyehle/ascii-converter">source</a> ]</li>
+</ul>
+
+<hr />
+
+<h2 id="data-engineering">Data Engineering</h2>
+<ul>
+  <li>A data ETL pipeline for 3M HIS’s data science lab</li>
+  <li>Deployment of ML models on AWS Lambda for 3M HIS’s data science lab</li>
+</ul>
+
+<hr />
+
+<h2 id="robotics">Robotics</h2>
+<ul>
+  <li>A control systems simulator. Includes a simple PID controlled space ship and a more complex space ship controlled by two nested PIDs [ <a href="https://github.com/tyehle/control-systems">source</a> ]</li>
+</ul>
+
+<hr />
+
+<h2 id="machine-learning-and-ai">Machine Learning and AI</h2>
+<ul>
+  <li>A question answering system based heavily on <a href="https://www.cs.utah.edu/~riloff/pdfs/quarc.pdf">quarc</a></li>
+  <li>A <a href="/articles/boggle">Boggle solver</a> [ <a href="https://bitbucket.org/tobinyehle/bogglesolver">source</a> ]</li>
+  <li>A <a href="/articles/dominion">Dominion AI</a> [ <a href="https://github.com/tyehle/dominion">source</a> ]</li>
+  <li>A low performance character recognition algorithm for sheet music</li>
+  <li>Neural nets with backprop training</li>
+  <li>ID3 decision trees</li>
+  <li>SVM with various loss functions and SGD training</li>
+  <li>A lame sudoku solver [ <a href="https://bitbucket.org/tobinyehle/sudoku-solver">source</a> ]</li>
+</ul>
+
+<h3 id="thesis">Thesis</h3>
+<p>I did my undergrad thesis in natural language parsing with <a href="http://svivek.com">Dr. Vivek Srikumar</a> at the University of Utah.</p>
+<ul>
+  <li><strong>Memoized Parsing with Derivatives</strong>: Tobin Yehle (2016) [ <a href="resources/thesis.pdf">pdf</a> ]</li>
+</ul>
+
+<hr />
+
+<h2 id="simulation">Simulation</h2>
+<ul>
+  <li>A dynamical friction simulation [ <a href="https://github.com/tyehle/dynamical-friction">source</a> ]</li>
+  <li>Particle simulation [ <a href="https://github.com/tyehle/particles">source</a> ]</li>
+</ul>
+
+<hr />
+
+<h2 id="complex-networks">Complex Networks</h2>
+<ul>
+  <li>Clustering analysis of suicide cases based on medical diagnostic codes for the University of Utah departement of Psychiatry</li>
+</ul>
+
+<h3 id="publications">Publications</h3>
+<p>I worked on complex networks with <a href="http://cs.fit.edu/~rmenezes/Home.html">Dr. Ronaldo Menezes</a> at Florida Institue of Technology.</p>
+<ul>
+  <li>
+    <p><strong>From Criminal Spheres of Familiarity to Crime Networks</strong>:
+Marcos A. C. Oliveira, Hugo Serrano Barbosa Filho, Tobin Yehle, Sarah White, Ronaldo Menezes (2015)
+<a href="http://dx.doi.org/10.1007/978-3-319-16112-9_22">doi</a></p>
+  </li>
+  <li>
+    <p><strong>The Spatial Structure of Crime in Urban Environments</strong>:
+Sarah White, Tobin Yehle, Hugo Serrano Barbosa Filho, Marcos A. C. Oliveira, Ronaldo Menezes (2014)
+<a href="http://dx.doi.org/10.1007/978-3-319-15168-7_14">doi</a></p>
+  </li>
+</ul>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

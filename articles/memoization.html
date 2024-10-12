@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Tail Call Optimized Memoization in Scala</title>
+  <meta name="description" content="Memoization is a technique where one saves the result of a function so if the function is ever called again with the same inputs it does not have to compute ...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/memoization">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">Tail Call Optimized Memoization in Scala</h1>
+    <p class="post-meta"><time datetime="2015-08-15T00:00:00+00:00" itemprop="datePublished">2015-08-15</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>Memoization is a technique where one saves the result of a function so if the function is ever called again with the same inputs it does not have to compute the result a second time.
+The example I will use here is the Fibonacci sequence. The obvious recursive implementation given below has comically terrible performance.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">fib</span><span class="o">(</span><span class="n">n</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span><span class="kt">Long</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="k">_</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+  <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+  <span class="k">case</span> <span class="mi">1</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+  <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nf">fib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">)</span> <span class="o">+</span> <span class="nf">fib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>I like this definition. I think it is easier to understand than an optimized version with loops and lists.
+Unfortunately this definition is unusably slow. Computing the value of the 10th Fibonacci number using this implementation requires 177 calls to <code class="language-plaintext highlighter-rouge">fib</code>! Many of these calls are calling <code class="language-plaintext highlighter-rouge">fib</code> with the same arguments. <code class="language-plaintext highlighter-rouge">fib(1)</code> was called 55 times.</p>
+
+<p>Bummer, but memoization can save it! Since <code class="language-plaintext highlighter-rouge">fib</code> is a pure function, calls with the same arguments will always return the same value, so there is no need to compute the result again. The implementation below uses a map to store the results of previous computations.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="nv">cache</span> <span class="k">=</span> <span class="nv">mutable</span><span class="o">.</span><span class="py">Map</span><span class="o">.</span><span class="py">empty</span><span class="o">[</span><span class="kt">Int</span>, <span class="kt">Long</span><span class="o">]</span>
+
+<span class="k">def</span> <span class="nf">memoizedFib</span><span class="o">(</span><span class="n">n</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="nv">cache</span><span class="o">.</span><span class="py">get</span><span class="o">(</span><span class="n">n</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">answer</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">answer</span>
+    <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span>
+      <span class="k">val</span> <span class="nv">answer</span> <span class="k">=</span> <span class="n">n</span> <span class="k">match</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="k">_</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+          <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+        <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+        <span class="k">case</span> <span class="mi">1</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+        <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nf">memoizedFib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">)</span> <span class="o">+</span> <span class="nf">memoizedFib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="o">)</span>
+      <span class="o">}</span>
+      <span class="nv">cache</span><span class="o">.</span><span class="py">update</span><span class="o">(</span><span class="n">n</span><span class="o">,</span> <span class="n">answer</span><span class="o">)</span>
+      <span class="n">answer</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>This version has the desired linear performance, requiring only 11 calls to fib to compute the value of the 10th number in the sequence.
+Great, but that code is ugly and no fun to write.</p>
+
+<hr />
+
+<h2 id="generalizing-to-any-function">Generalizing to Any Function</h2>
+
+<p>What I want is a small change I can make to the original function to get the power of memoization.
+The first step is to make a more general <code class="language-plaintext highlighter-rouge">memoize</code> function.</p>
+
+<p>Due to limitations in scala generics the functions I will be able to memoize will all have the type signature <code class="language-plaintext highlighter-rouge">I=&gt;O</code>, that is they accept only one input of type <code class="language-plaintext highlighter-rouge">I</code> and produce an output of type <code class="language-plaintext highlighter-rouge">O</code>.</p>
+
+<p>If I am going to write a more general <code class="language-plaintext highlighter-rouge">memoize</code> function, in what way should it be more general? I decided that forcing a specific caching system was not necessary.
+Checking a cache may be able to give an answer very quickly, but not always, but may sometimes fail. I will call this function <code class="language-plaintext highlighter-rouge">check</code> and its type is <code class="language-plaintext highlighter-rouge">I=&gt;Option[O]</code>.
+After I compute a result the hard way I should save it away so <code class="language-plaintext highlighter-rouge">check</code> can return it in the future. I will call this saving function <code class="language-plaintext highlighter-rouge">update</code> and its type is <code class="language-plaintext highlighter-rouge">(I,O)=&gt;Unit</code>. Using this framework I implemented a generic <code class="language-plaintext highlighter-rouge">memoize</code> function.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">memoize</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">](</span><span class="n">fn</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="n">O</span><span class="o">,</span>
+                  <span class="n">check</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">O</span><span class="o">],</span>
+                  <span class="n">update</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="n">O</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">I</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">check</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">answer</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">answer</span>
+    <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span>
+      <span class="k">val</span> <span class="nv">answer</span> <span class="k">=</span> <span class="nf">fn</span><span class="o">(</span><span class="n">input</span><span class="o">)</span>
+      <span class="nf">update</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">answer</span><span class="o">)</span>
+      <span class="n">answer</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Cool! I also implemented a <code class="language-plaintext highlighter-rouge">memoizeMap</code> function that memoizes some function, <code class="language-plaintext highlighter-rouge">I=&gt;O</code>, using a map for convenience.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">memoizeMap</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">](</span><span class="n">fn</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="n">O</span><span class="o">)</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="n">O</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="nv">cache</span> <span class="k">=</span> <span class="nv">mutable</span><span class="o">.</span><span class="py">Map</span><span class="o">.</span><span class="py">empty</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">]</span>
+  <span class="nf">memoize</span><span class="o">(</span><span class="n">fn</span><span class="o">,</span> <span class="nv">cache</span><span class="o">.</span><span class="py">get</span><span class="o">,</span> <span class="nv">cache</span><span class="o">.</span><span class="py">update</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Now I can finally get the syntax I want. Unfortunately <code class="language-plaintext highlighter-rouge">def</code> is somewhat special in scala, so the best syntax I could wrangle is the following.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">lazy</span> <span class="k">val</span> <span class="nv">fib</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=&gt;</span> <span class="nc">Long</span> <span class="k">=</span> <span class="n">memoizeMap</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+  <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+  <span class="k">case</span> <span class="mi">1</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+  <span class="k">case</span> <span class="n">n</span> <span class="k">=&gt;</span> <span class="nf">fib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">)</span> <span class="o">+</span> <span class="nf">fib</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">lazy</code> keyword is the only way I could figure out to get recursive binding without using <code class="language-plaintext highlighter-rouge">def</code>.</p>
+
+<hr />
+
+<h2 id="tail-recursion">Tail Recursion</h2>
+
+<p>What if I want to compute the 100 000th Fibonacci number though? Things get a little more tricky.
+The syntax I ended up with is not very readable, so iteration is probably a more useful (and faster) solution for most functions.
+There are many functions that are not easily represented as iteration for which the method I use here is useful.</p>
+
+<p>First of all: what is tail recursion? A tail recursive function only has calls to itself in tail position.
+In a language like Java with an explicit <code class="language-plaintext highlighter-rouge">return</code> keyword this means the only recursive calls are of the form <code class="language-plaintext highlighter-rouge">return myself(...);</code>.
+More generally, the result of the recursive function is equal to the recursive call, or some atomic value.</p>
+
+<p>The Fibonacci function branches into two sub-calls, <code class="language-plaintext highlighter-rouge">fib(n-1)</code> and <code class="language-plaintext highlighter-rouge">fib(n-2)</code>, at every step which introduces its own set of problems.
+For starters  I implemented factorial.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">lazy</span> <span class="k">val</span> <span class="nv">fact</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=&gt;</span> <span class="nc">BigInt</span> <span class="k">=</span> <span class="n">memoizeMap</span> <span class="o">{</span>
+  <span class="k">case</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+    <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+  <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="mi">1</span>
+  <span class="k">case</span> <span class="n">n</span> <span class="k">=&gt;</span> <span class="n">n</span> <span class="o">*</span> <span class="nf">fact</span><span class="o">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>This implementation is not tail recursive. Notice the value of a call to <code class="language-plaintext highlighter-rouge">fact</code> is <code class="language-plaintext highlighter-rouge">n * fact(...)</code>. The traditional way to make this function tail recursive is include an accumulator as an argument to the function. Unfortunately this will make the memoization useless because every intermediate value is unique to the original call.</p>
+
+<hr />
+
+<h2 id="continuation-passing-style">Continuation Passing Style</h2>
+
+<p>I will leave a full explanation of continuation passing style to others.
+Some good explanations are <a href="http://matt.might.net/articles/by-example-continuation-passing-style/">here</a> and <a href="https://www.cs.utah.edu/~mflatt/past-courses/cs6520/public_html/s02/cps.pdf">here</a>.
+In this specific case the continuation acts as a return for the recursive function. The recursive function must, at some point, call the continuation it is passed with the result it is to return.
+Note the type of the continuation here is <code class="language-plaintext highlighter-rouge">O=&gt;O</code>. The following is the same factorial function rewritten in continuation passing style. This change lets me write all recursive calls in tail position.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">cpsFact</span><span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span> <span class="n">kont</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">=&gt;</span><span class="nc">BigInt</span><span class="o">)</span><span class="k">:</span> <span class="kt">BigInt</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="n">input</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="nf">kont</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">=&gt;</span> <span class="nf">cpsFact</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">,</span>
+                      <span class="o">(</span><span class="n">result</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">kont</span><span class="o">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">result</span><span class="o">))</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>I wrote a new memoizing function that accepts CPS functions.
+Unlike the first one this memoizer is properly tail recursive.
+The update step is moved into the continuation of the recursive call, ensuring the stack frame of the lambda can be torn down.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">memoizeRec</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">](</span><span class="n">fn</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="n">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">O</span><span class="o">,</span>
+                     <span class="n">check</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">O</span><span class="o">],</span>
+                     <span class="n">update</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span>
+                    <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="n">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">O</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">I</span><span class="o">,</span> <span class="n">kont</span><span class="k">:</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="n">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">check</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">answer</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">kont</span><span class="o">(</span><span class="n">answer</span><span class="o">)</span>
+    <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="nf">fn</span><span class="o">(</span><span class="n">input</span><span class="o">,</span>
+                    <span class="o">(</span><span class="n">result</span><span class="k">:</span> <span class="kt">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+                      <span class="nf">update</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">result</span><span class="o">)</span>
+                      <span class="nf">kont</span><span class="o">(</span><span class="n">result</span><span class="o">)</span>
+                    <span class="o">})</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Unfortunately the scala compiler will not tail call optimize lazy vals, so I needed a different solution.
+The scala standard library had all I needed to fix the problem tucked away in the <a href="http://www.scala-lang.org/api/2.12.0-M4/scala/util/control/TailCalls$.html">TailCalls</a> library.
+The implementation containing the tail call optimization is given below.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">memoizeRec</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">](</span><span class="n">fn</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">],</span>
+                     <span class="n">check</span><span class="k">:</span> <span class="kt">I</span> <span class="o">=&gt;</span> <span class="nc">Option</span><span class="o">[</span><span class="kt">O</span><span class="o">],</span>
+                     <span class="n">update</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span><span class="k">:</span>
+                    <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="o">(</span><span class="n">input</span><span class="k">:</span> <span class="kt">I</span><span class="o">,</span> <span class="n">kont</span><span class="k">:</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nf">check</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="n">answer</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="n">answer</span><span class="o">))</span>
+    <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span>
+      <span class="nf">tailcall</span><span class="o">(</span><span class="nf">fn</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="o">(</span><span class="n">result</span><span class="k">:</span> <span class="kt">O</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="o">{</span>
+        <span class="nf">update</span><span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">result</span><span class="o">)</span>
+        <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="n">result</span><span class="o">))</span>
+      <span class="o">}))</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="nf">memoizeRecMap</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">](</span><span class="n">fn</span><span class="k">:</span> <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span><span class="k">:</span>
+    <span class="o">(</span><span class="kt">I</span><span class="o">,</span> <span class="kt">O</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">])</span> <span class="k">=&gt;</span> <span class="nc">TailRec</span><span class="o">[</span><span class="kt">O</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="nv">cache</span> <span class="k">=</span> <span class="nv">mutable</span><span class="o">.</span><span class="py">Map</span><span class="o">.</span><span class="py">empty</span><span class="o">[</span><span class="kt">I</span>, <span class="kt">O</span><span class="o">]</span>
+  <span class="nf">memoizeRec</span><span class="o">(</span><span class="n">fn</span><span class="o">,</span> <span class="nv">cache</span><span class="o">.</span><span class="py">get</span><span class="o">,</span> <span class="nv">cache</span><span class="o">.</span><span class="py">update</span><span class="o">)</span>
+<span class="o">}</span>
+
+<span class="k">lazy</span> <span class="k">val</span> <span class="nv">cpsFactTail</span><span class="k">:</span> <span class="o">(</span><span class="kt">Int</span><span class="o">,</span> <span class="kt">BigInt</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">BigInt</span><span class="o">])</span> <span class="k">=&gt;</span>
+                      <span class="nc">TailRec</span><span class="o">[</span><span class="kt">BigInt</span><span class="o">]</span> <span class="k">=</span> <span class="n">memoizeRecMap</span> <span class="o">{</span>
+  <span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">kont</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">input</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="mi">1</span><span class="o">))</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">=&gt;</span>
+      <span class="nf">tailcall</span><span class="o">(</span><span class="nf">cpsFactTail</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">,</span>
+        <span class="o">(</span><span class="n">result</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">result</span><span class="o">))))</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>I said earlier that the Fibonacci sequence was harder to express using only tail calls.
+You are only allowed to make a single recursive call, so the continuation must contain the other recursive call.
+Remember continuations must also only contain tail calls, so the continuation passed to the recursive call will be a tail recursive call with a final continuation calling the outer continuation with the final result of this function call. Not very intuitive, I know.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">lazy</span> <span class="k">val</span> <span class="nv">cpsFibTail</span><span class="k">:</span> <span class="o">(</span><span class="kt">Int</span><span class="o">,</span> <span class="kt">BigInt</span><span class="o">=&gt;</span><span class="nc">TailRec</span><span class="o">[</span><span class="kt">BigInt</span><span class="o">])</span> <span class="k">=&gt;</span>
+                     <span class="nc">TailRec</span><span class="o">[</span><span class="kt">BigInt</span><span class="o">]</span> <span class="k">=</span> <span class="n">memoizeRecMap</span> <span class="o">{</span>
+  <span class="o">(</span><span class="n">input</span><span class="o">,</span> <span class="n">kont</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">input</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">=&gt;</span>
+      <span class="k">throw</span> <span class="k">new</span> <span class="nc">Exception</span><span class="o">(</span><span class="s">"negative input"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="mi">0</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="mi">1</span><span class="o">))</span>
+    <span class="k">case</span> <span class="mi">1</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="mi">1</span><span class="o">))</span>
+    <span class="k">case</span> <span class="n">n</span> <span class="k">=&gt;</span> <span class="nf">tailcall</span><span class="o">(</span><span class="nf">cpsFibTail</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">1</span><span class="o">,</span> <span class="o">(</span><span class="n">res1</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">)</span> <span class="k">=&gt;</span>
+      <span class="nf">tailcall</span><span class="o">(</span><span class="nf">cpsFibTail</span><span class="o">(</span><span class="n">n</span><span class="o">-</span><span class="mi">2</span><span class="o">,</span> <span class="o">(</span><span class="n">res2</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">)</span> <span class="k">=&gt;</span>
+        <span class="nf">tailcall</span><span class="o">(</span><span class="nf">kont</span><span class="o">(</span><span class="n">res1</span> <span class="o">+</span> <span class="n">res2</span><span class="o">))))))</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>With this implementation I was able to compute the 100 000th Fibonacci number in just 2.2 seconds.</p>
+
+<hr />
+
+<h2 id="limitations">Limitations</h2>
+
+<ul>
+  <li>
+    <p>Functions must be pure. Memoizing Random.nextInt is not very useful.</p>
+  </li>
+  <li>
+    <p>Continuations are not easy to read. All of the simplicity of the initial Fibonacci function has been lost. In most cases arbitrary depth recursion is not a requirement, so the more elegant <code class="language-plaintext highlighter-rouge">memoizeMap</code> version could be used instead.</p>
+  </li>
+  <li>
+    <p>Input must be a single type. Without macros accepting an arbitrary number inputs in a type-safe manner is simply not possible. Yes you could write a different version that accepts two input functions, or put your arguments into a tuple. In my mind these are not acceptable solutions.</p>
+  </li>
+</ul>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Dominion AI</title>
+  <meta name="description" content="One of the projects in Matt Flatt’s functional programming studio class was to make an AI for the deck building game Dominion. We were each tasked with build...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/dominion">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">Dominion AI</h1>
+    <p class="post-meta"><time datetime="2016-07-29T00:00:00+00:00" itemprop="datePublished">2016-07-29</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>One of the projects in <a href="http://www.cs.utah.edu/~mflatt/cs5965/">Matt Flatt’s functional programming studio class</a> was to make an AI for the deck building game <a href="https://en.wikipedia.org/wiki/Dominion_(card_game)">Dominion</a>. We were each tasked with building an executable that would read what other players were doing on standard in, and communicate moves on standard out. The server that controlled all of the state of the game, and specified the protocol by which the processes would communicate was fixed. I chose to implement my client in Haskell.</p>
+
+<p>There are three distinct pieces of the program following an architecture similar to the standard model-view-controller architecture. In this case there is a model responsible for representing the world state in the program, a parser similar to the standard view, but in this case it is responsible for I/O from the server instead of a user, and a two part controller. The controller is split into a driver side that contains all the code for dealing with I/O, and an agent side that is responsible for deciding how to play.</p>
+
+<p>All source code is publicly available on <a href="https://github.com/tyehle/dominion">github</a></p>
+
+<hr />
+
+<h2 id="model">Model</h2>
+
+<p>In order for the AI to make decisions it needs to know what the state of the game is. Every turn the server would send all of the known information about the game state to the client, so a client could be a simple reflex agent. This removes the difficulties of passing information along to the AI in the future in a purely functional way. I chose to represent the information received from the server as follows.</p>
+
+<p>The most basic item in the game is probably the cards. I chose to represent them as a single union type. To simplify things we only dealt with the 10 suggested starting cards.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Card</span> <span class="o">=</span> <span class="kt">Cellar</span> <span class="o">|</span> <span class="kt">Moat</span> <span class="o">|</span> <span class="o">...</span> <span class="o">|</span> <span class="kt">Gold</span> <span class="o">|</span> <span class="kt">Province</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">,</span> <span class="kt">Show</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This representation makes no distinction between the victory, treasure, and kingdom cards, but such a system can get very complex for not much benefit.</p>
+
+<p>I set up the <code class="language-plaintext highlighter-rouge">Action</code> type to represent any valid action a player can perform on their turn. They can <code class="language-plaintext highlighter-rouge">Add</code> treasures to their pool, <code class="language-plaintext highlighter-rouge">Clean</code> their hand, ending their turn, possibly showing one of any remaining cards in their hand, <code class="language-plaintext highlighter-rouge">Buy</code> a card from the supply, or <code class="language-plaintext highlighter-rouge">Act</code> by playing a kingdom card.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Action</span> <span class="o">=</span> <span class="kt">Add</span> <span class="kt">Card</span>
+            <span class="o">|</span> <span class="kt">Clean</span> <span class="p">(</span><span class="kt">Maybe</span> <span class="kt">Card</span><span class="p">)</span>
+            <span class="o">|</span> <span class="kt">Buy</span> <span class="kt">Card</span>
+            <span class="o">|</span> <span class="kt">Act</span> <span class="kt">Card</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>With the basic set of cards, a player can only be attacked by a Militia, and the only options they have are to discard, or to reveal a Moat.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Defense</span> <span class="o">=</span> <span class="kt">Reveal</span> <span class="kt">Card</span> <span class="o">|</span> <span class="kt">Discard</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Finally there is a <code class="language-plaintext highlighter-rouge">GameState</code> record that holds all the information about the current state of the game, and a <code class="language-plaintext highlighter-rouge">Notification</code> type. A <code class="language-plaintext highlighter-rouge">Notification</code> represents anything the server could send to the client. The server can <code class="language-plaintext highlighter-rouge">Request</code> an action from the client, <code class="language-plaintext highlighter-rouge">Update</code> the client about the actions of other players, Ask the client to defend itself if <code class="language-plaintext highlighter-rouge">Attacked</code>, or update the client that another player <code class="language-plaintext highlighter-rouge">Defended</code> them self.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">Notification</span> <span class="o">=</span> <span class="kt">Request</span> <span class="kt">GameState</span>
+                  <span class="o">|</span> <span class="kt">Update</span> <span class="kt">String</span> <span class="kt">Action</span>
+                  <span class="o">|</span> <span class="kt">Attacked</span> <span class="kt">Action</span> <span class="kt">String</span> <span class="kt">GameState</span>
+                  <span class="o">|</span> <span class="kt">Defended</span> <span class="kt">String</span> <span class="kt">Defense</span> <span class="kr">deriving</span> <span class="p">(</span><span class="kt">Eq</span><span class="p">,</span> <span class="kt">Show</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This internal representation is the target of the parser that reads from standard in.</p>
+
+<hr />
+
+<h2 id="parser-and-output-format">Parser and Output Format</h2>
+
+<p>The client uses a parser to read data from standard in, and <code class="language-plaintext highlighter-rouge">Show</code> instances defined on <code class="language-plaintext highlighter-rouge">Action</code> and <code class="language-plaintext highlighter-rouge">Defense</code> to build responses to put on standard out.</p>
+
+<p>The show instances simply put the data into an s-expression to be written to standard out.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">-- Wraps a list of strings in parens, and lower cases all of them</span>
+<span class="n">wrap</span> <span class="o">::</span> <span class="p">[</span><span class="kt">String</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">String</span>
+<span class="n">wrap</span> <span class="n">ss</span> <span class="o">=</span> <span class="s">"("</span> <span class="o">++</span> <span class="n">intercalate</span> <span class="s">" "</span> <span class="p">(</span><span class="n">map</span> <span class="p">(</span><span class="n">map</span> <span class="n">toLower</span><span class="p">)</span> <span class="n">ss</span><span class="p">)</span> <span class="o">++</span> <span class="s">")"</span>
+
+<span class="kr">instance</span> <span class="kt">Show</span> <span class="kt">Action</span> <span class="kr">where</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Add</span> <span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="n">wrap</span> <span class="p">[</span><span class="s">"add"</span><span class="p">,</span> <span class="n">show</span> <span class="n">c</span><span class="p">]</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Clean</span> <span class="p">(</span><span class="kt">Just</span> <span class="n">c</span><span class="p">))</span> <span class="o">=</span> <span class="n">wrap</span> <span class="p">[</span><span class="s">"clean"</span><span class="p">,</span> <span class="n">show</span> <span class="n">c</span><span class="p">]</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Clean</span> <span class="kt">Nothing</span><span class="p">)</span> <span class="o">=</span> <span class="s">"(clean)"</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Buy</span> <span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="n">wrap</span> <span class="p">[</span><span class="s">"buy"</span><span class="p">,</span> <span class="n">show</span> <span class="n">c</span><span class="p">]</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Act</span> <span class="n">c</span> <span class="n">cs</span><span class="p">)</span> <span class="o">=</span> <span class="n">wrap</span> <span class="o">$</span> <span class="s">"act"</span> <span class="o">:</span> <span class="n">show</span> <span class="n">c</span> <span class="o">:</span> <span class="n">map</span> <span class="n">show</span> <span class="n">cs</span>
+
+<span class="kr">instance</span> <span class="kt">Show</span> <span class="kt">Defense</span> <span class="kr">where</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Reveal</span> <span class="n">c</span><span class="p">)</span> <span class="o">=</span> <span class="n">wrap</span> <span class="p">[</span><span class="n">show</span> <span class="n">c</span><span class="p">]</span>
+    <span class="n">show</span> <span class="p">(</span><span class="kt">Discard</span> <span class="n">cs</span><span class="p">)</span> <span class="o">=</span> <span class="n">wrap</span> <span class="o">$</span> <span class="s">"discard"</span><span class="o">:</span><span class="p">(</span><span class="n">map</span> <span class="n">show</span> <span class="n">cs</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The parser module is responsible for taking valid input from standard in, and transforming it into a <code class="language-plaintext highlighter-rouge">Notification</code>. The interface it presents to the rest of the program is the function <code class="language-plaintext highlighter-rouge">parseNotification</code> which takes an input string, parses a notification and returns the pair of the parsed notification and any remaining input.</p>
+
+<p>The details of the parser are long and boring, and all I will say here is that I quite like parser combinators. They make building a parser for a protocol like this much easier. My favorite explanation of what they are is <a href="http://theorangeduck.com/page/you-could-have-invented-parser-combinators">here</a>.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">parseNotification</span> <span class="o">::</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="kt">Notification</span><span class="p">,</span> <span class="kt">String</span><span class="p">)</span>
+<span class="n">parseNotification</span> <span class="n">input</span>
+    <span class="o">|</span> <span class="kt">Left</span> <span class="n">e</span>       <span class="o">&lt;-</span> <span class="n">parsed</span> <span class="o">=</span> <span class="n">error</span> <span class="o">.</span> <span class="n">show</span> <span class="o">$</span> <span class="n">e</span>
+    <span class="o">|</span> <span class="kt">Right</span> <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">parsed</span> <span class="o">=</span> <span class="n">result</span>
+    <span class="kr">where</span>
+        <span class="n">parsed</span> <span class="o">=</span> <span class="n">parse</span> <span class="p">(</span><span class="n">withRemaining</span> <span class="n">notification</span><span class="p">)</span> <span class="s">"stdin"</span> <span class="n">input</span>
+
+<span class="n">withRemaining</span> <span class="o">::</span> <span class="kt">Parser</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">Parser</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="kt">String</span><span class="p">)</span>
+<span class="n">withRemaining</span> <span class="n">p</span> <span class="o">=</span> <span class="kr">do</span>
+    <span class="n">result</span> <span class="o">&lt;-</span> <span class="n">p</span>
+    <span class="n">rest</span> <span class="o">&lt;-</span> <span class="n">getInput</span>
+    <span class="n">return</span> <span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">rest</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>The first iterations of the server did not put any spaces between the notifications. It just wrote a single s-expression to the client, so in order to parse correctly it was necessary to read the input character by character, instead of using more common line reading functions. This created an interesting problem because if the client attempted to read a line the whole system would hang. The server would write the request to the client as a single s-expression <code class="language-plaintext highlighter-rouge">"(move (...))"</code>, and then wait for the client to respond. Since there was no new line at the end of the s-expression the client, who had attempted to read a line, would be waiting for more input.</p>
+
+<p>There were two ways to solve this problem. In an eager language the natural solution is to read standard in character by character, instead of waiting for a line. The reader would keep a counter of parentheses to determine where the end of the s-expression was. This solution is certainly possible in Haskell, but the lazy evaluation of strings presents a much more elegant solution.</p>
+
+<p>In Haskell it is possible to get a lazy pointer to an entire buffer. This operation consumes the buffer, and in the case of standard in results in a string. This string, representing all of standard in over the lifetime of the program, is the string passed to <code class="language-plaintext highlighter-rouge">parseNotification</code>. The parser will remove all the characters containing the notification from the beginning of the string, and then return the parsed structure and any remaining input. In this case the remaining input is a lazy pointer to any remaining characters from standard in. Attempting to read any more characters from the string at this point would cause the program to hang because there aren’t more characters yet. The server hasn’t written them because it is waiting for a response from the client. Instead of reading the remainder of the string the parser simply returns it to be used later.</p>
+
+<hr />
+
+<h2 id="driver">Driver</h2>
+
+<p>The driver code is responsible for all I/O and connects the parser to the agent. For now it is enough to know that there is a typeclass <code class="language-plaintext highlighter-rouge">Agent</code>, and it defines the function <code class="language-plaintext highlighter-rouge">respond :: (Agent a) =&gt; a -&gt; Notification -&gt; String</code>. I wanted to test my code out on different agents, so most of the code that would normally go in <code class="language-plaintext highlighter-rouge">main</code> got its own function <code class="language-plaintext highlighter-rouge">drive</code>. <code class="language-plaintext highlighter-rouge">drive</code> takes an agent, and runs the program, leaving the only code in main the choice of agent.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">main</span> <span class="o">::</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">main</span> <span class="o">=</span> <span class="n">drive</span> <span class="kt">Miner49er</span>
+
+<span class="n">drive</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Agent</span> <span class="n">a</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">drive</span> <span class="n">agent</span> <span class="o">=</span> <span class="kr">do</span>
+    <span class="n">hSetBuffering</span> <span class="n">stdin</span> <span class="kt">NoBuffering</span>
+    <span class="n">hSetBuffering</span> <span class="n">stdout</span> <span class="kt">NoBuffering</span>
+    <span class="n">hGetContents</span> <span class="n">stdin</span> <span class="o">&gt;&gt;=</span> <span class="n">runClient</span> <span class="n">agent</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">drive</code> ensures there is no buffering on the I/O channels, and then gets a lazy pointer to all of standard in with <code class="language-plaintext highlighter-rouge">hGetContents</code> and hands that off to the <code class="language-plaintext highlighter-rouge">runClient</code> function which deals with looping responses from the client.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">runClient</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Agent</span> <span class="n">a</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">-&gt;</span> <span class="kt">IO</span> <span class="nb">()</span>
+<span class="n">runClient</span> <span class="n">agent</span> <span class="n">input</span>
+    <span class="o">|</span> <span class="n">null</span> <span class="n">trimmed</span> <span class="o">=</span> <span class="n">return</span> <span class="nb">()</span>
+    <span class="o">|</span> <span class="n">otherwise</span>    <span class="o">=</span> <span class="p">(</span><span class="n">putStr</span> <span class="o">.</span> <span class="n">respond</span> <span class="n">agent</span><span class="p">)</span> <span class="n">notification</span>
+                     <span class="o">&gt;&gt;</span> <span class="n">runClient</span> <span class="n">agent</span> <span class="n">moreInput</span>
+    <span class="kr">where</span>
+        <span class="n">trimmed</span> <span class="o">=</span> <span class="n">dropWhile</span> <span class="n">isSpace</span> <span class="n">input</span>
+        <span class="p">(</span><span class="n">notification</span><span class="p">,</span> <span class="n">moreInput</span><span class="p">)</span> <span class="o">=</span> <span class="n">parseNotification</span> <span class="n">trimmed</span>
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">runClient</code> will return if the server has closed the input stream, otherwise it prints the agents response, and loops on the remaining input from the server. Trimming the input is necessary because eventually the server was changed to emit new lines between each request, making it much easier to interface with, but by that time I had already built my parser, so I just remove all whitespace between the server’s messages.</p>
+
+<hr />
+
+<h2 id="agent">Agent</h2>
+
+<p>The agent is responsible for deciding how to play dominion. The strategy I used is called big money smithy, and details about it can be found <a href="https://dominionstrategy.com/2012/06/13/terminal-draw-big-money/">here</a>, and how to beat it <a href="https://dominionstrategy.com/2012/07/30/building-the-first-game-engine/">here</a>. The basic strategy is to buy some small number of smithies, and treasure cards until you can buy provinces to end the game. It is surprisingly effective.</p>
+
+<p>There are three distinct phases of a turn in dominion, during the first a player uses their actions to play kingdom cards, then they play their treasure cards, and then they can buy new cards from the supply. When their turn is over they discard any remaining cards in their hand, revealing one of them to the other players because it goes face up on their discard pile.</p>
+
+<p>I wanted to make it easy to quickly define a new strategy, so I tried to generalize all of the decisions an agent would have to make. I came up with the following typeclass that I designed to be general enough for any strategy.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">class</span> <span class="kt">Agent</span> <span class="n">a</span> <span class="kr">where</span>
+    <span class="n">tryAction</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+    <span class="n">tryAdd</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+    <span class="n">tryBuy</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+    <span class="n">tryDefend</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Defense</span> <span class="kt">GameState</span>
+    <span class="n">discardTo</span> <span class="o">::</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Defense</span>
+</code></pre></div></div>
+
+<p>This requires an agent to define how to discard if necessary, and how to play actions, treasures, buys, and defenses using <code class="language-plaintext highlighter-rouge">Either</code> as a monad with “failure” being a valid response. This use of <code class="language-plaintext highlighter-rouge">Either</code> allows the implementation of playing actions to be very simple.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">act</span> <span class="o">::</span> <span class="p">(</span><span class="kt">Agent</span> <span class="n">a</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="n">a</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Action</span>
+<span class="n">act</span> <span class="n">a</span> <span class="n">state</span> <span class="o">=</span> <span class="kr">case</span> <span class="n">tryAction</span> <span class="n">a</span> <span class="n">state</span> <span class="o">&gt;&gt;=</span> <span class="n">tryAdd</span> <span class="n">a</span> <span class="o">&gt;&gt;=</span> <span class="n">tryBuy</span> <span class="n">a</span> <span class="kr">of</span>
+    <span class="kt">Left</span> <span class="n">action</span>  <span class="o">-&gt;</span> <span class="n">action</span>
+    <span class="kt">Right</span> <span class="kr">_</span>      <span class="o">-&gt;</span> <span class="kt">Clean</span> <span class="o">$</span> <span class="n">find</span> <span class="p">(</span><span class="n">const</span> <span class="kt">True</span><span class="p">)</span> <span class="p">(</span><span class="n">hand</span> <span class="n">state</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>If none of <code class="language-plaintext highlighter-rouge">tryAction</code>, <code class="language-plaintext highlighter-rouge">tryAdd</code>, or <code class="language-plaintext highlighter-rouge">tryBuy</code> “fail” with a valid response the turn is over and the discard message is returned.</p>
+
+<h3 id="playing-kingdom-cards">Playing Kingdom Cards</h3>
+
+<p>The simplest of the kingdom cards do not affect any other cards. There are more complex cards, like the mine or the cellar that require the player to do something with their hand. This function cannot deal with cards like that. For my strategy this is good enough because the only action card I will play is the smithy.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">trySimplePlay</span> <span class="o">::</span> <span class="kt">Card</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+<span class="n">trySimplePlay</span> <span class="n">card</span> <span class="n">state</span>
+    <span class="o">|</span> <span class="n">canAct</span> <span class="n">state</span> <span class="n">card</span> <span class="o">=</span> <span class="kt">Left</span> <span class="o">$</span> <span class="kt">Act</span> <span class="n">card</span> <span class="kt">[]</span>
+    <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span> <span class="kt">Right</span> <span class="n">state</span>
+
+<span class="n">inHand</span> <span class="o">::</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Card</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">inHand</span> <span class="n">state</span> <span class="n">card</span> <span class="o">=</span> <span class="n">card</span> <span class="p">`</span><span class="n">elem</span><span class="p">`</span> <span class="n">hand</span> <span class="n">state</span>
+
+<span class="n">canAct</span> <span class="o">::</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Card</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="n">canAct</span> <span class="n">state</span> <span class="n">card</span> <span class="o">=</span> <span class="n">actions</span> <span class="n">state</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">inHand</span> <span class="n">state</span> <span class="n">card</span>
+</code></pre></div></div>
+
+<h3 id="playing-treasures">Playing Treasures</h3>
+
+<p>I chose to always play all the treasure cards in my hand, which made this phase very easy</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">playAllTreasures</span> <span class="o">::</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+<span class="n">playAllTreasures</span> <span class="n">state</span> <span class="o">=</span> <span class="kr">case</span> <span class="n">find</span> <span class="n">isTreasure</span> <span class="p">(</span><span class="n">hand</span> <span class="n">state</span><span class="p">)</span> <span class="kr">of</span>
+    <span class="kt">Just</span> <span class="n">t</span> <span class="o">-&gt;</span> <span class="kt">Left</span> <span class="o">$</span> <span class="kt">Add</span> <span class="n">t</span>
+    <span class="kr">_</span> <span class="o">-&gt;</span> <span class="kt">Right</span> <span class="n">state</span>
+</code></pre></div></div>
+
+<h3 id="buying">Buying</h3>
+
+<p>This is arguably where most of the strategy of the game is, and is also where my code is the ugliest. I decided to use a system of card priority with a function to determine if a card should be bought based on the game state.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">buyPriority</span> <span class="o">::</span> <span class="p">(</span><span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Card</span> <span class="o">-&gt;</span> <span class="kt">Bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Either</span> <span class="kt">Action</span> <span class="kt">GameState</span>
+<span class="n">buyPriority</span> <span class="n">should</span> <span class="n">priority</span> <span class="n">state</span>
+    <span class="o">|</span> <span class="n">buys</span> <span class="n">state</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">=</span> <span class="kr">case</span> <span class="n">find</span> <span class="p">(</span><span class="nf">\</span><span class="n">c</span> <span class="o">-&gt;</span> <span class="n">canBuy</span> <span class="n">c</span> <span class="o">&amp;&amp;</span> <span class="n">should</span> <span class="n">state</span> <span class="n">c</span><span class="p">)</span> <span class="n">priority</span> <span class="kr">of</span>
+        <span class="kt">Just</span> <span class="n">c</span> <span class="o">-&gt;</span> <span class="kt">Left</span> <span class="p">(</span><span class="kt">Buy</span> <span class="n">c</span><span class="p">)</span>
+        <span class="kt">Nothing</span> <span class="o">-&gt;</span> <span class="kt">Right</span> <span class="n">state</span>
+    <span class="o">|</span> <span class="n">otherwise</span> <span class="o">=</span> <span class="kt">Right</span> <span class="n">state</span>
+    <span class="kr">where</span>
+        <span class="n">canBuy</span> <span class="n">c</span> <span class="o">=</span> <span class="n">cost</span> <span class="n">c</span> <span class="o">&lt;=</span> <span class="n">coins</span> <span class="n">state</span> <span class="o">&amp;&amp;</span> <span class="n">c</span> <span class="p">`</span><span class="n">elem</span><span class="p">`</span> <span class="n">supply</span> <span class="n">state</span>
+</code></pre></div></div>
+
+<p>If the agent has no buys left then it just passes on to the next phase, otherwise it searches through the prioritized list of cards and buys the first one that it can buy and should buy. The should buy function is provided by the agent instance, and allows it to control when to buy certain cards. I have found the ability to pass a function to a function like this to define part of its behavior an extremely useful pattern that allows for much more flexible implementations.</p>
+
+<h3 id="discarding">Discarding</h3>
+
+<p>The last interesting question to answer is how to discard cards if the player is attacked, and they cannot defend with a moat. I settled on a similar strategy as buying, allowing the agent instance to specify a priority of cards to discard.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">discardPriority</span> <span class="o">::</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="kt">GameState</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="kt">Defense</span>
+<span class="n">discardPriority</span> <span class="n">priority</span> <span class="n">state</span> <span class="n">n</span> <span class="o">=</span> <span class="kt">Discard</span> <span class="p">(</span><span class="n">findDiscards</span> <span class="p">(</span><span class="n">length</span> <span class="p">(</span><span class="n">hand</span> <span class="n">state</span><span class="p">)</span> <span class="o">-</span> <span class="n">n</span><span class="p">)</span>
+                                                         <span class="p">(</span><span class="n">hand</span> <span class="n">state</span><span class="p">)</span>
+                                                         <span class="n">priority</span><span class="p">)</span>
+
+<span class="n">findDiscards</span> <span class="o">::</span> <span class="kt">Int</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="kt">Card</span><span class="p">]</span>
+<span class="n">findDiscards</span> <span class="n">n</span> <span class="n">hand</span> <span class="n">toTry</span>
+    <span class="o">|</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="mi">0</span>     <span class="o">=</span> <span class="kt">[]</span>
+    <span class="o">|</span> <span class="n">null</span> <span class="n">toTry</span> <span class="o">=</span> <span class="n">take</span> <span class="n">n</span> <span class="n">hand</span>
+    <span class="o">|</span> <span class="n">otherwise</span>  <span class="o">=</span> <span class="p">(</span><span class="n">take</span> <span class="n">n</span> <span class="n">toRemove</span><span class="p">)</span> <span class="o">++</span> <span class="n">findDiscards</span> <span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="n">length</span> <span class="n">toRemove</span><span class="p">)</span> <span class="n">toKeep</span> <span class="p">(</span><span class="n">tail</span> <span class="n">toTry</span><span class="p">)</span>
+    <span class="kr">where</span>
+        <span class="p">(</span><span class="n">toRemove</span><span class="p">,</span> <span class="n">toKeep</span><span class="p">)</span> <span class="o">=</span> <span class="n">partition</span> <span class="p">(</span><span class="o">==</span> <span class="p">(</span><span class="n">head</span> <span class="n">toTry</span><span class="p">))</span> <span class="n">hand</span>
+</code></pre></div></div>
+
+<p>This is a function that recursively removes cards in the order of the list <code class="language-plaintext highlighter-rouge">toTry</code> if it runs out of cards to try it takes from the beginning of the hand.</p>
+
+<h3 id="defining-agent-instances">Defining Agent Instances</h3>
+
+<p>With all of these default implementations in place my smithy bot now only took a few lines to define. My goal was to build an agent that would:</p>
+
+<ul>
+  <li>always buy a province if it can</li>
+  <li>only buy smithies if less than 5% of its cards are smithies</li>
+  <li>avoid buying gold and silver in the late game</li>
+  <li>only buy duchies and estates at the end of the game</li>
+  <li>discard its least valuable cards first</li>
+</ul>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kr">data</span> <span class="kt">SmithyMoney</span> <span class="o">=</span> <span class="kt">SmithyMoney</span>
+
+<span class="kr">instance</span> <span class="kt">Agent</span> <span class="kt">SmithyMoney</span> <span class="kr">where</span>
+    <span class="n">tryAction</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">trySimplePlay</span> <span class="kt">Smithy</span>
+
+    <span class="n">tryAdd</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">playAllTreasures</span>
+
+    <span class="n">tryBuy</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">buyPriority</span> <span class="n">shouldBuy</span> <span class="n">priority</span>
+        <span class="kr">where</span>
+            <span class="n">priority</span> <span class="o">=</span> <span class="p">[</span><span class="kt">Province</span><span class="p">,</span> <span class="kt">Gold</span><span class="p">,</span> <span class="kt">Smithy</span><span class="p">,</span> <span class="kt">Duchy</span><span class="p">,</span> <span class="kt">Silver</span><span class="p">,</span> <span class="kt">Estate</span><span class="p">]</span>
+            <span class="n">shouldBuy</span> <span class="kr">_</span> <span class="kt">Province</span> <span class="o">=</span> <span class="kt">True</span>
+            <span class="n">shouldBuy</span> <span class="n">state</span> <span class="kt">Gold</span> <span class="o">=</span> <span class="n">numInSupply</span> <span class="n">state</span> <span class="kt">Province</span> <span class="o">&gt;</span> <span class="mi">4</span>
+            <span class="n">shouldBuy</span> <span class="n">state</span> <span class="kt">Smithy</span> <span class="o">=</span> <span class="n">probDraw</span> <span class="p">(</span><span class="n">allMyCards</span> <span class="n">state</span><span class="p">)</span> <span class="kt">Smithy</span> <span class="o">&lt;</span> <span class="mf">0.05</span>
+            <span class="n">shouldBuy</span> <span class="n">state</span> <span class="kt">Duchy</span> <span class="o">=</span> <span class="n">numInSupply</span> <span class="n">state</span> <span class="kt">Province</span> <span class="o">&lt;</span> <span class="mi">6</span>
+            <span class="n">shouldBuy</span> <span class="n">state</span> <span class="kt">Silver</span> <span class="o">=</span> <span class="n">numInSupply</span> <span class="n">state</span> <span class="kt">Province</span> <span class="o">&gt;</span> <span class="mi">4</span>
+            <span class="n">shouldBuy</span> <span class="n">state</span> <span class="kt">Estate</span> <span class="o">=</span> <span class="n">numInSupply</span> <span class="n">state</span> <span class="kt">Province</span> <span class="o">&lt;</span> <span class="mi">4</span>
+
+    <span class="n">tryDefend</span> <span class="kr">_</span> <span class="o">=</span> <span class="n">revealMoat</span>
+
+    <span class="n">discardTo</span> <span class="kr">_</span> <span class="n">state</span> <span class="o">=</span> <span class="n">discardPriority</span> <span class="p">([</span><span class="kt">Province</span><span class="p">,</span> <span class="kt">Duchy</span><span class="p">,</span> <span class="kt">Estate</span><span class="p">]</span> <span class="o">++</span> <span class="n">valueSorted</span><span class="p">)</span> <span class="n">state</span>
+        <span class="kr">where</span>
+            <span class="n">valueSorted</span> <span class="o">=</span> <span class="n">sortOn</span> <span class="n">value</span> <span class="p">[</span><span class="kt">Copper</span><span class="p">,</span> <span class="kt">Silver</span><span class="p">,</span> <span class="kt">Gold</span><span class="p">,</span> <span class="kt">Smithy</span><span class="p">]</span>
+            <span class="n">value</span> <span class="kt">Smithy</span> <span class="o">=</span> <span class="n">expectedDrawValue</span> <span class="n">state</span> <span class="mi">3</span>
+            <span class="n">value</span> <span class="n">t</span> <span class="o">=</span> <span class="n">treasureWorth</span> <span class="n">t</span>
+</code></pre></div></div>
+
+<p>And thats it.</p>
+
+<p>I also made a different agent that uses some more of the kingdom cards just to see how it would do. I won’t show the whole definition here, but I think it is interesting to see how actions can be chained together even in the agent instance using bind.</p>
+
+<div class="language-haskell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">tryAction</span> <span class="kr">_</span> <span class="n">state</span> <span class="o">=</span> <span class="n">trySimplePlay</span> <span class="kt">Village</span> <span class="n">state</span> <span class="o">&gt;&gt;=</span> <span class="n">trySimplePlay</span> <span class="kt">Militia</span> <span class="o">&gt;&gt;=</span> <span class="n">trySimplePlay</span> <span class="kt">Smithy</span> <span class="o">&gt;&gt;=</span> <span class="n">tryMine</span>
+</code></pre></div></div>
+
+<p>To fine tune my smithy bot I ran it in batches of 50 games against this agent, and got it to the point where it would win about 95% of the time, and lose about 1% of the time.</p>
+
+<hr />
+
+<h2 id="testing">Testing</h2>
+
+<p>I used HUnit and Tasty as a testing framework, which all fits in very nicely with stack. I wrote many tests, and they were invaluable in helping me write correct code, but they are also not very interesting. I found it quite annoying that I could not access a function for testing if it was not exposed by a module, and this lead to me exposing nearly every piece of code I wrote. I feel like there must be a better way.</p>
+
+<p>Edit: The Internal/External module pattern seems to be the way to do this. <a href="http://stackoverflow.com/a/9198453/3230242">This answer</a> has a great explanation of how that should work.</p>
+
+<hr />
+
+<h2 id="further-thoughts">Further Thoughts</h2>
+
+<p>After defining my agent instances it seems that most of the strategy of the game is not in how to play cards from a hand, but knowing what deck composition to aim for. A possible improvement to the project would be to write an agent interface that requires only an early game, mid game, and late game deck composition and attempts to satisfy it. This would make the internals of the agent much more complected, but would make tuning and testing a strategy much easier.</p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

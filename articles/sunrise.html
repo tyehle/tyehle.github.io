@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | A Sunrise Alarm Clock</title>
+  <meta name="description" content="I built a sunrise alarm clock so I wouldn’t need to wake up in the dark during the winter time when the sun rises very late. This was the first PCB I had eve...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/sunrise">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">A Sunrise Alarm Clock</h1>
+    <p class="post-meta"><time datetime="2020-06-08T00:00:00+00:00" itemprop="datePublished">2020-06-08</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>I built a sunrise alarm clock so I wouldn’t need to wake up in the dark during the winter time when the sun rises very late. This was the first PCB I had ever made and I had a lot of fun with it. The hardware and firmware is all <a href="https://github.com/tyehle/sunrise">on github</a>.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/sunrise-board.jpeg" alt="sunrise-board" /></p>
+
+  <figcaption>The completed project</figcaption>
+
+</figure>
+
+<p>The board is powered by an Atmega328 and has, in no particular order:</p>
+<ul>
+  <li>Three power transistors to control the RGB channels of an LED strip</li>
+  <li>A power regulator so it can be powered by a 12V wall wart</li>
+  <li>A real time clock with a battery backup to keep track of the time</li>
+  <li>No surface mount parts because I wasn’t sure I could solder them</li>
+  <li>Dope sunrise art</li>
+</ul>
+
+<h2 class="no_toc" id="contents">Contents</h2>
+
+<ul id="markdown-toc">
+  <li><a href="#hardware-development" id="markdown-toc-hardware-development">Hardware Development</a>    <ul>
+      <li><a href="#in-the-beginning" id="markdown-toc-in-the-beginning">In the Beginning</a></li>
+      <li><a href="#the-circuit-board-design" id="markdown-toc-the-circuit-board-design">The Circuit Board Design</a></li>
+      <li><a href="#circuit-board-layout" id="markdown-toc-circuit-board-layout">Circuit Board Layout</a></li>
+    </ul>
+  </li>
+  <li><a href="#the-firmware" id="markdown-toc-the-firmware">The Firmware</a>    <ul>
+      <li><a href="#color-profile" id="markdown-toc-color-profile">Color Profile</a></li>
+      <li><a href="#normalization" id="markdown-toc-normalization">Normalization</a></li>
+      <li><a href="#high-precision-pwm" id="markdown-toc-high-precision-pwm">High precision PWM</a></li>
+    </ul>
+  </li>
+  <li><a href="#wishlist" id="markdown-toc-wishlist">Wishlist</a></li>
+</ul>
+
+<hr />
+
+<h1 id="hardware-development">Hardware Development</h1>
+
+<h2 id="in-the-beginning">In the Beginning</h2>
+
+<p>I started this project with a cheap clone of the Arduino pro mini driving an LED strip, and the first time I left it on overnight it burned out the power regulator. This probably would not have happened to a legit Arduino pro mini, but the cheap clones have to make compromises in the design to lower costs, and the power regulator is a good way to save on component costs.</p>
+
+<p>I was also keeping track of the time using the Atmega’s clock, but this isn’t the best approach because if the board lost power for any reason then it would lose the time. Maybe for a microwave that is ok, but not for an alarm clock (Why don’t microwaves save the time? An RTC only costs a few dollars).</p>
+
+<figure>
+  <p><img src="/resources/sunrise/ldo-example.png" alt="ldo-example" /></p>
+
+  <figcaption>Test circuit from <a href="https://www.st.com/resource/en/datasheet/l4931.pdf#page=6">the datasheet</a> of the L4931 voltage regulator</figcaption>
+
+</figure>
+
+<p>My second attempt used <a href="https://www.adafruit.com/product/3296">a real time clock (RTC) module</a> I bought from Adafruit, and <a href="https://www.mouser.com/ProductDetail/511-L4931CZ50-AP">a better power regulator</a>. Figuring out how to use this power regulator was straightforward because <a href="https://www.st.com/resource/en/datasheet/l4931.pdf#page=6">its datasheet</a> has an example circuit that was exactly what I was trying to do. All this assembled on a breadboard worked great! The LEDs powered up at the scheduled time, but the barrel jack was really easy to accidentally pull out of the bread board, so I decided I needed to solder some components into a circuit board.</p>
+
+<h2 id="the-circuit-board-design">The Circuit Board Design</h2>
+
+<p>My first thought was that I should make a board with the barrel jack, output transistors, better power regulation, and sockets for the Arduino and the RTC module. The RTC module communicates over I<sup>2</sup>C, but the position of the I<sup>2</sup>C lines on the Arduino aren’t on the standard set of pins that fit in a breadboard, so any Arduino I could plug in wouldn’t be compatible with a breadboard anymore.</p>
+
+<p>It was at this point I realized there were only 15 components on the Arduino board and I was going to need my own copies of 4 of them for power regulation. <a href="https://www.arduino.cc/en/uploads/Main/Arduino-Pro-Mini-schematic.pdf">The schematic is also open source</a>, so I thought it would be more fun to build my own PCB with the components I needed from the Arduino and RTC modules as well as all the output and power regulation circuitry.</p>
+
+<p>I started with the Arduino pro mini schematic and made changes and additions until it had all the things I needed. I knew I wanted to use the L4931 regulator and a barrel connector to provide power to the board, so I subbed those into the power regulation section of the Arduino’s schematic. The stabilization caps on the Arduino design are larger than those suggested by the L4931 datasheet, so I used the larger ones just to be safe. I have since learned that the smaller ceramic capacitor is used to smooth out higher frequency variations in the output voltage. It has a much lower equivalent series resistance (ESR) than an electrolytic capacitor so it can respond faster, but large ceramic caps are expensive, so the electrolytic capacitor smooths out any low frequency noise on the cheap and the ceramic cap takes care of the high frequency noise. There is also an optional power indication LED I chose not to solder because I don’t like lights I can’t turn off on things in my bedroom.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/power-regulation.svg" alt="power-regulation" width="100%" /></p>
+
+  <figcaption>Power regulation with an electrolytic and ceramic cap to filter output voltage</figcaption>
+
+</figure>
+
+<p>The design of the RTC breakout from Adafruit is not open source, but <a href="https://datasheets.maximintegrated.com/en/ds/DS1307.pdf">the datasheet for the DS1307</a> is excellent, and has an example on the very first page! I sure do appreciate good documentation. There is one additional component on the breakout board I got from Adafruit, but I think it is just a power stabilization capacitor. This clock will keep the time using the backup battery if main power is lost, so if I unplug the board, or the power goes out I don’t need to reset the clock. The two pull-up resistors on the <code class="language-plaintext highlighter-rouge">SDA</code> and <code class="language-plaintext highlighter-rouge">SCL</code> lines are required by the I<sup>2</sup>C spec. The 32.768kHz crystal is a requirement of the chip. This is a very popular speed for clocks because it makes counting seconds so easy because 32,768 is 2<sup>15</sup>.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/rtc.svg" alt="rtc" width="80%" /></p>
+
+  <figcaption>DS1307 Real Time Clock</figcaption>
+
+</figure>
+
+<p>I replicated the setup I had on the original breadboard design for the high power output transistors. The gates are connected to PWM capable outputs on the microcontroller and provide a high capacity current sink for the LED strip when on. Most of the strands I’ve seen are powered off of 12V and use a common high voltage line, so this setup should be compatible with many LED strips. The pull down resistors on the outputs here prevent the LED strip from momentarily turning on when the microcontroller is reset. The Atmega328 <a href="https://forum.arduino.cc/index.php?topic=57829.msg421711#msg421711">sets all pins to input without pull up resistors when it is reset</a> so the voltage at the mosfet gate would be left floating, potentially allowing it to turn on.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/output-transistors.svg" alt="output-transistors" width="60%" /></p>
+
+  <figcaption>High current output transistors for the RGB channels of the LED strip</figcaption>
+
+</figure>
+
+<p>The rest of the schematic is the same as the Arduino board I was using. There is another power stabilization cap drawn very close to the microcontroller. In this case this means that the cap should be physically close to the microcontroller on the board to provide a very stable voltage for it to use. The microcontroller will probably use different amounts of current at high frequency, so this makes sense to me.</p>
+
+<p>The other interesting bit of this part of the schematic is the reset hardware. There is a cap between the <code class="language-plaintext highlighter-rouge">DTR</code> pin on the programming header and the reset pin on the microcontroller with a pull-up resistor. This is so that if software fails to pull the <code class="language-plaintext highlighter-rouge">DTR</code> pin high again the board will still reboot after charging the capacitor through the pull-up resistor. The values of the capacitor and resistor here have been tuned so the board is only momentarily off and can talk to the computer properly even if there are bad drivers for the programming cable.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/micro-controller.svg" alt="micro-controller" width="100%" /></p>
+
+  <figcaption>GPIO and reset for the Atmega328</figcaption>
+
+</figure>
+
+<h2 id="circuit-board-layout">Circuit Board Layout</h2>
+
+<p>I decided to use only through hole parts because I wasn’t sure I had the skill to solder surface mount components. I also wanted to make sure I could debug and expand the design, so I wanted all the standard Arduino pins to be accessible if I plugged it into a bread board. All this means that the board is very skinny so it would fit on a bread board and in order for there to be any room left on the bread board it has to hang way off the end.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/top.svg" alt="top" width="100%" /></p>
+
+  <figcaption>Top of the board with many tiny suns</figcaption>
+
+</figure>
+
+<figure>
+  <p><img src="/resources/sunrise/bottom.svg" alt="bottom" width="100%" /></p>
+
+  <figcaption>Bottom of the board with one huge rising sun</figcaption>
+
+</figure>
+
+<hr />
+
+<h1 id="the-firmware">The Firmware</h1>
+
+<h2 id="color-profile">Color Profile</h2>
+<p>When I first started thinking about a sunrise alarm clock I thought it would be neat to have it run through the colors of the <em>actual</em> sky during a sunrise. Surely somebody has collected such data. As I tried to find a dataset I discovered that “the sky at sunrise” isn’t a very precise idea. What angle above the horizon? East, West, straight up, or some other azimuth? A single point or the average color over an area? Are there clouds? If so where? Is there haze in the air?</p>
+
+<p>I decided this was too much and I should instead choose a color profile that seemed natural without any relation to The Real Sky. I settled on the color of a perfect black body radiator because it goes from red to “white” which seemed nice, and there is a nice physical metaphor with the light source warming up for the day. I got some data about <a href="http://www.vendian.org/mncharity/dir3/blackbody/">hue for different temperatures here</a>. The colors in this dataset were converted using a D65 whitepoint, which is why I think there is a kink in the plot around 6500K. I played around with this data a bit and decided I liked the look of a ramp from 1000K up to 4500K. This leaves the lights a little more yellow than a true white which I find nice in the morning.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/blackbody-rgb.svg" alt="brightness" width="100%" /></p>
+
+  <figcaption>Color channel values for different temperature blackbody radiators using a D65 whitepoint</figcaption>
+
+</figure>
+
+<p>The intensity of a true blackbody goes up way too fast to be a satisfying light, and since our eyes respond exponentially, I thought an exponential brightness curve would look nice. The lights need to start off and end at fully bright over some period of time, so the brightness function \(B(t)\) will need satisfy \(B(0)=0\) and \(B(1)=1\). By shifting the exponential function down by one and then using horizontal and vertical stretching I can ensure that our needs are met while still leaving a parameter free for the steepness of the curve. The exponential function with a vertical shift of -1, a vertical stretch of \(k\), and a horizontal stretch of \(a\) is \(B_k(t) = k \left( e^{a t} - 1 \right)\). Solving \(B_k(1) = 1\) to gives \(a = \ln\left(\frac{1}{k} + 1\right)\), leaving \(k\) as the single steepness parameter. The full brightness function is then</p>
+
+\[B_k(t) = k \left( \exp \left( t \ln \left( \frac{1}{k} + 1 \right) \right) - 1 \right)\]
+
+<figure>
+  <p><img src="/resources/sunrise/exponential-brightness.svg" alt="brightness" width="100%" /></p>
+
+  <figcaption>The brightness function \(B_k(t)\) for some values of \(k\). For the lights I have, \(k=\frac{1}{8}\) looks the best.</figcaption>
+
+</figure>
+
+<h2 id="normalization">Normalization</h2>
+
+<p>The blue LEDs on the strip I have seemed much brighter than the green or red channels, so I knew I needed to tone them down, but by how much? To determine this I took a picture of a white sheet of paper lit by the LEDs at full power and then looked at a histogram of each color channel.</p>
+
+<figure>
+  <p><img src="/resources/sunrise/led-power.svg" alt="LED power histogram" width="100%" /></p>
+
+  <figcaption>LEDs at full power reflecting off a white sheet of paper</figcaption>
+
+</figure>
+
+<p>Normalizing the green and blue channels to the max output of the red LEDs means that “full power” for the green channel should be \(\frac{87}{96} \cdot 255 = 231\), and for the blue channel \(\frac{87}{179} \cdot 255 = 124\).</p>
+
+<h2 id="high-precision-pwm">High precision PWM</h2>
+
+<p>The difference between the lights being off, and being on at 1/255 power is pretty jarring. At higher powers the steps become less noticeable, but the first few steps are very clearly visible. Fortunately, there is a 16 bit clock on the Atmega328 and it can control the PWM output on pins 9 and 10, providing steps too small to notice. I didn’t know this when I fabricated the boards, so I got really lucky that one of the LED channels is wired to pin 9! Unfortunately, the Arduino environment doesn’t make it easy to access this functionality (it looks like there is <a href="https://www.arduino.cc/reference/en/language/functions/zero-due-mkr-family/analogwriteresolution">some work to make that better</a>, but not for AVR based boards), so I had to directly set values of the control registers. <a href="https://arduino.stackexchange.com/a/12719">This stack overflow answer</a> got me started nicely and I filled in the rest of the code by replicating <a href="https://github.com/arduino/ArduinoCore-avr/blob/58081c05e548560d3a60050bbf260ebec5d1e867/cores/arduino/wiring_analog.c#L104">the Arduino source</a> and the taking a look at <a href="http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf#page=108">the relevant parts of the Atmega328 datasheet</a>.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">setupPWM16</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">TCCR1A</span> <span class="o">=</span> <span class="n">_BV</span><span class="p">(</span><span class="n">COM1A1</span><span class="p">)</span> <span class="o">|</span> <span class="n">_BV</span><span class="p">(</span><span class="n">COM1B1</span><span class="p">)</span>  <span class="cm">/* non-inverting PWM */</span>
+    <span class="o">|</span> <span class="n">_BV</span><span class="p">(</span><span class="n">WGM11</span><span class="p">);</span>                     <span class="cm">/* mode 14: fast PWM, TOP=ICR1 */</span>
+  <span class="n">TCCR1B</span> <span class="o">=</span> <span class="n">_BV</span><span class="p">(</span><span class="n">WGM13</span><span class="p">)</span> <span class="o">|</span> <span class="n">_BV</span><span class="p">(</span><span class="n">WGM12</span><span class="p">)</span>    <span class="cm">/* other bits for mode 14 */</span>
+    <span class="o">|</span> <span class="n">_BV</span><span class="p">(</span><span class="n">CS10</span><span class="p">);</span>                      <span class="cm">/* no prescaling */</span>
+  <span class="n">ICR1</span> <span class="o">=</span> <span class="mh">0xffff</span><span class="p">;</span>                      <span class="cm">/* TOP counter value */</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>This setup function sets a bunch of flags that control the output of pins 9 and 10. These pins are internally called PB1 and PB2, and can optionally be driven by output compare 1A (OC1A) and output compare 1B (OC1B). The 1A and 1B suffix is used throughout to refer to these two outputs. <code class="language-plaintext highlighter-rouge">WGM</code> is the <a href="http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf#page=109">Waveform Generation Mode</a>, and it is being set to mode 14 which is <a href="http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf#page=101">fast PWM</a> with the maximum counter value controlled by <code class="language-plaintext highlighter-rouge">ICR1</code>. We want the steps to be as small as possible, so we will use the full 16 bits of the counter by setting the max value to <code class="language-plaintext highlighter-rouge">0xffff</code>. <code class="language-plaintext highlighter-rouge">CS</code> is the <a href="http://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf#page=110">Clock Select settings</a>, and it is set so there is no prescaling on the timer because there is no reason to not have the PWM cycles happen as fast as possible.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">analogWrite16</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">pin</span><span class="p">,</span> <span class="kt">uint16_t</span> <span class="n">val</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">pinMode</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">OUTPUT</span><span class="p">);</span>
+
+  <span class="c1">// PWM outputs cannot be fully on or off, so use digitalWrite instead</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">LOW</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="nf">if</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="mi">65535</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">digitalWrite</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">HIGH</span><span class="p">);</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="c1">// Calls to digitalWrite overwrite some things, so make sure to reset them</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">pin</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">case</span> <span class="mi">9</span><span class="p">:</span>
+        <span class="n">_SFR_BYTE</span><span class="p">(</span><span class="n">TCCR1A</span><span class="p">)</span> <span class="o">|=</span> <span class="n">_BV</span><span class="p">(</span><span class="n">COM1A1</span><span class="p">);</span>
+        <span class="n">ICR1</span> <span class="o">=</span> <span class="mh">0xffff</span><span class="p">;</span>
+        <span class="n">OCR1A</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+
+      <span class="k">case</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">_SFR_BYTE</span><span class="p">(</span><span class="n">TCCR1A</span><span class="p">)</span> <span class="o">|=</span> <span class="n">_BV</span><span class="p">(</span><span class="n">COM1B1</span><span class="p">);</span>
+        <span class="n">ICR1</span> <span class="o">=</span> <span class="mh">0xffff</span><span class="p">;</span>
+        <span class="n">OCR1B</span> <span class="o">=</span> <span class="n">val</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+
+      <span class="nl">default:</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>This is a 16 bit version of the <a href="https://github.com/arduino/ArduinoCore-avr/blob/58081c05e548560d3a60050bbf260ebec5d1e867/cores/arduino/wiring_analog.c#L104">standard Arduino <code class="language-plaintext highlighter-rouge">analogWrite</code> function</a>. Setting <code class="language-plaintext highlighter-rouge">OCR1A</code> to 0 won’t turn the PWM all the way off because of the way it is implemented internally, so in order to turn off the pin we need to switch it to digital mode. When we do that we end up stomping on the value in <code class="language-plaintext highlighter-rouge">ICR1</code> and <code class="language-plaintext highlighter-rouge">TCCR1A</code>, so we need to set those if we want to update the PWM output.</p>
+
+<div class="language-c++ highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">void</span> <span class="nf">writePWM</span><span class="p">(</span><span class="kt">uint8_t</span> <span class="n">pin</span><span class="p">,</span> <span class="kt">double</span> <span class="n">value</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">pin</span> <span class="o">!=</span> <span class="mi">9</span> <span class="o">&amp;&amp;</span> <span class="n">pin</span> <span class="o">!=</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">analogWrite</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">ratioToRange</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="mi">256</span><span class="p">));</span>
+  <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="n">analogWrite16</span><span class="p">(</span><span class="n">pin</span><span class="p">,</span> <span class="n">ratioToRange</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="mi">65536</span><span class="p">));</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>I didn’t want to keep track of which output channel was on the high resolution PWM, so I wrote this wrapper function that writes the proper PWM value based to the pin based on a floating point value from 0 to 1.</p>
+
+<p>With all this setup, the red channel, which comes on first, can use the high resolution timer, which makes everything look much better. There is still a noticeable step when the green light goes from off to its lowest brightness, but there isn’t anything I can do about that without redesigning the board.</p>
+
+<hr />
+
+<h1 id="wishlist">Wishlist</h1>
+
+<p>After using this for a while these are some features I wish it had:</p>
+<ul>
+  <li>A better UI. Setting the wake up time or resetting the clock requires a firmware flash which … uhh, encourages you to have a healthy regular sleep schedule 🙃 A single button that could reset the time, or do a snooze, or turn off the lights would be nice.</li>
+  <li>Mounting holes on the board. There isn’t a great way to put this thing into a case if I had one.</li>
+  <li>A case. It is currently just sitting on my floor. Not a great spot for electronics to stay safe.</li>
+  <li>Better interfacing with the LED strip. Terminal blocks, or some other type of convenient connector.</li>
+  <li>High res PWM on the other channels. There is a pretty noticeable change when the green channel comes on, so it would be great to use a high res timer for that as well. To get high res timers for all three channels I would have to use something other than the Atmega328, which would probably be a good idea anyway.</li>
+</ul>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>

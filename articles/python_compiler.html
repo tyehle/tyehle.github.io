@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wdth,wght@75,700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;0,700;1,400&display=swap');
+  </style>
+
+  <title>Tobin Yehle | Python Compiler</title>
+  <meta name="description" content="Every assignment in Matt Might’s compilers class at the University of Utah is a piece of a compiler for Python. In an ideal world at the end of the semester ...">
+
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="canonical" href="http://tobin.yehle.us/articles/python_compiler">
+  <link rel="alternate" type="application/rss+xml" title="Tobin Yehle" href="http://tobin.yehle.us/feed.xml">
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?">
+
+  
+</head>
+
+
+  <body>
+
+    <header class="site-header">
+
+  <div class="wrapper">
+
+    <span class="header-title"><a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a></span>
+
+    <nav class="site-nav">
+      <a href="#" class="menu-icon">
+        <svg viewBox="0 0 18 15">
+          <path fill="#424242" d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.031C17.335,0,18,0.665,18,1.484L18,1.484z"/>
+          <path fill="#424242" d="M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0c0-0.82,0.665-1.484,1.484-1.484 h15.031C17.335,6.031,18,6.696,18,7.516L18,7.516z"/>
+          <path fill="#424242" d="M18,13.516C18,14.335,17.335,15,16.516,15H1.484C0.665,15,0,14.335,0,13.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.031C17.335,12.031,18,12.696,18,13.516L18,13.516z"/>
+        </svg>
+      </a>
+
+      <div class="trigger">
+        
+
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+            
+              <a class="page-link" href="/">About</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/articles/">Articles</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/projects">Projects</a>
+            
+          
+        
+          
+            
+              <a class="page-link" href="/pottery">Pottery</a>
+            
+          
+        
+      </div>
+    </nav>
+
+  </div>
+
+</header>
+
+
+    <div class="page-content">
+      <div class="wrapper">
+        <article class="post" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="page-header">
+    <h1 class="post-title" itemprop="name headline">Python Compiler</h1>
+    <p class="post-meta"><time datetime="2015-10-31T00:00:00+00:00" itemprop="datePublished">2015-10-31</time></p>
+  </header>
+
+  <div class="post-content" itemprop="articleBody">
+  	<hr>
+    <p>Every assignment in <a href="http://matt.might.net/teaching/compilers/spring-2015/">Matt Might’s compilers class</a> at the University of Utah is a piece of a compiler for Python. In an ideal world at the end of the semester all of the students would have made an end to end system that can fully compile Python into a low level language such as Java bytecode or x86. During the semester Matt Might was called to Washington to help set up the <a href="http://www.nih.gov/precisionmedicine/">Precision Medicine Initiative</a> which caused the class schedule to lag. There were only four projects in the end, and the output of the system was a normalized subset of Python ready for a CPS transform.</p>
+
+<hr />
+
+<h2 id="lexing">Lexing</h2>
+
+<p>This project took an file of valid Python code and produced a sequence of tokens. The tokens were one of eight s-expressions:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(NEWLINE)
+
+(INDENT)
+
+(DEDENT)
+
+(ID name)
+
+(LIT value)
+
+(KEYWORD symbol)
+
+(PUNCT text)
+
+(ENDMARKER)
+</code></pre></div></div>
+
+<p>For example if the lexer got the input</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">return</span> <span class="mi">7</span><span class="o">*</span><span class="n">x</span>
+</code></pre></div></div>
+
+<p>It would generate</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>(KEYWORD def)
+(ID "f")
+(PUNCT "(")
+(ID "x")
+(PUNCT ")")
+(PUNCT ":")
+(NEWLINE)
+(INDENT)
+(KEYWORD return)
+(LIT 7)
+(PUNCT "*")
+(ID "x")
+(NEWLINE)
+(DEDENT)
+(ENDMARKER)
+</code></pre></div></div>
+
+<p>The hardest part of the stage was dealing with Unicode in variable names, and strings. Variables were required to be NFKC normalized, and string literals had to be properly represented in Racket. The lexer requires some state to deal with the whitespace correctly, and there are some interesting corner cases with the ellipsis literal and a regular period.</p>
+
+<hr />
+
+<h2 id="parsing">Parsing</h2>
+
+<p>The parser we built was really just a bunch of reduction rules on top of the racket parsing library and DERP2 built by Matt Might (if you want to know more about how this works, the <a href="https://github.com/mattmight/project-python-parser/blob/master/sxgram2yaccgram.rkt">code is available</a>, and there is also <a href="http://theorangeduck.com/page/you-could-have-invented-parser-combinators">this fantastic post</a> about how parser combinators work).</p>
+
+<p>We started with the <a href="https://docs.python.org/3/reference/grammar.html">Python grammar specification</a>, and inserted reductions to give us the parse tree matching <a href="https://docs.python.org/3/library/ast.html#abstract-grammar">Python’s built in AST module</a>. As an example of what this entails I will walk through the process for dealing with an if statement.</p>
+
+<p>From the Python grammar, an if statement looks like this (shown here in lisp-like syntax):</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">if_stmt</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"if"</span>
+              <span class="nv">test</span>
+              <span class="s">":"</span>
+              <span class="nv">suite</span>
+              <span class="p">(</span><span class="nf">rep</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"elif"</span> <span class="nv">test</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">))</span>
+              <span class="p">(</span><span class="nf">opt</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"else"</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>So an if statement must have a test expression and a body, and then any number of else if clauses, followed by an optional else clause.</p>
+
+<p>In my code I use the function <code class="language-plaintext highlighter-rouge">($--&gt; input output)</code>, which generates a reduction rule that matches the first argument and results in the second argument. Inside the reduction, parts of the input can be extracted with the <code class="language-plaintext highlighter-rouge">($ n)</code> function, and the symbol <code class="language-plaintext highlighter-rouge">$$</code> gets expanded to the entire input.</p>
+
+<p>An example of a simple reduction is the following application.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">$--&gt;</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"if"</span> <span class="nv">test</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">)</span>
+
+      <span class="p">(</span><span class="nb">list</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">4</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>This will match the literal <code class="language-plaintext highlighter-rouge">"if"</code>, any expansion of the non-terminal <code class="language-plaintext highlighter-rouge">test</code>, the literal <code class="language-plaintext highlighter-rouge">":"</code>, and finally any expansion of the non-terminal <code class="language-plaintext highlighter-rouge">suite</code>. It will return a list of just the second and fourth things it matched, in this case the expansion of <code class="language-plaintext highlighter-rouge">test</code> and <code class="language-plaintext highlighter-rouge">suite</code>.</p>
+
+<p>The following is the full set of reductions for an if statement.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">if_stmt</span> <span class="p">(</span><span class="nf">$--&gt;</span> <span class="p">(</span><span class="nf">seq</span> <span class="p">(</span><span class="nf">$--&gt;</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"if"</span> <span class="nv">test</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">)</span>
+                          <span class="p">(</span><span class="nb">list</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">4</span><span class="p">)))</span>
+                    <span class="p">(</span><span class="nf">rep</span> <span class="p">(</span><span class="nf">$--&gt;</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"elif"</span> <span class="nv">test</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">)</span>
+                               <span class="p">(</span><span class="nb">list</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">4</span><span class="p">))))</span>
+                    <span class="p">(</span><span class="nf">$--&gt;</span> <span class="p">(</span><span class="nf">opt</span> <span class="p">(</span><span class="nf">seq</span> <span class="s">"else"</span> <span class="s">":"</span> <span class="nv">suite</span><span class="p">))</span>
+                          <span class="p">(</span><span class="nf">match</span> <span class="nv">$$</span>
+                            <span class="p">[</span><span class="nf">#f</span> <span class="o">'</span><span class="p">()]</span>
+                            <span class="p">[</span><span class="o">`</span><span class="p">(</span><span class="nf">"else"</span> <span class="s">":"</span> <span class="o">,</span><span class="nv">block</span><span class="p">)</span> <span class="nv">block</span><span class="p">])))</span>
+               <span class="p">(</span><span class="nf">process-ifs</span> <span class="p">(</span><span class="nb">cons</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">2</span><span class="p">))</span> <span class="p">(</span><span class="nf">$</span> <span class="mi">3</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>The inner reductions filter out the unneeded keywords, and the outer reduction is a simple call to a helper function that builds the correct output syntax. The helper function takes a list of if/elif statements, and a possibly empty else statement. It recursively packages them up into the correct if-else syntax.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">process-ifs</span> <span class="nv">ifs</span> <span class="nv">tail</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">match</span> <span class="nv">ifs</span>
+    <span class="p">[</span><span class="o">`</span><span class="p">((</span><span class="o">,</span><span class="nv">test</span> <span class="o">,</span><span class="nv">body</span><span class="p">))</span>
+     <span class="o">`</span><span class="p">(</span><span class="nf">If</span> <span class="p">(</span><span class="nf">test</span> <span class="o">,</span><span class="nv">test</span><span class="p">)</span>
+          <span class="p">(</span><span class="nf">body</span> <span class="o">,@</span><span class="nv">body</span><span class="p">)</span>
+          <span class="p">(</span><span class="nf">orelse</span> <span class="o">,@</span><span class="nv">tail</span><span class="p">))]</span>
+    <span class="p">[(</span><span class="nb">cons</span> <span class="o">`</span><span class="p">(</span><span class="o">,</span><span class="nv">test</span> <span class="o">,</span><span class="nv">body</span><span class="p">)</span> <span class="nv">others</span><span class="p">)</span>
+     <span class="o">`</span><span class="p">(</span><span class="nf">If</span> <span class="p">(</span><span class="nf">test</span> <span class="o">,</span><span class="nv">test</span><span class="p">)</span>
+          <span class="p">(</span><span class="nf">body</span> <span class="o">,@</span><span class="nv">body</span><span class="p">)</span>
+          <span class="p">(</span><span class="nf">orelse</span> <span class="o">,</span><span class="p">(</span><span class="nf">process-ifs</span> <span class="nv">others</span> <span class="nv">tail</span><span class="p">)))]))</span>
+</code></pre></div></div>
+
+<p>The final system would take the following if statement</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">if</span> <span class="n">t1</span><span class="p">:</span>
+  <span class="n">r1</span>
+<span class="k">elif</span> <span class="n">t2</span><span class="p">:</span>
+  <span class="n">r2</span>
+<span class="k">else</span><span class="p">:</span>
+  <span class="n">r3</span>
+</code></pre></div></div>
+
+<p>and produce this syntax tree</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="nf">If</span>
+ <span class="p">(</span><span class="nf">test</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">t1</span><span class="p">))</span>
+ <span class="p">(</span><span class="nf">body</span> <span class="p">(</span><span class="nf">Expr</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">r1</span><span class="p">)))</span>
+ <span class="p">(</span><span class="nf">orelse</span> <span class="p">(</span><span class="nf">If</span> <span class="p">(</span><span class="nf">test</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">t2</span><span class="p">))</span>
+             <span class="p">(</span><span class="nf">body</span> <span class="p">(</span><span class="nf">Expr</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">r2</span><span class="p">)))</span>
+             <span class="p">(</span><span class="nf">orelse</span> <span class="p">(</span><span class="nf">Expr</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">r3</span><span class="p">))))))</span>
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="desugaring">Desugaring</h2>
+
+<p>The next two projects were desugaring and normalization steps. They both used a <a href="https://github.com/mattmight/pywalk">tree walker</a> built for the output of the parser. The implementation of the tree walker simply does a match on a structure in the parse tree, and recursively descends until it hits a leaf, performing a transformation along the way. The interface provided by the tree walker is the ability to walk the tree performing some transformation on every subtree. It also provided the functions to perform a transformation until a fixed point was hit, and the option to transform top down or bottom up.</p>
+
+<p>Basically all of the code that I wrote for this part was transformation functions that take a statement, and return a list of possible replacement statements. The most basic transform is fixing return statements so that a lone <code class="language-plaintext highlighter-rouge">return</code> call becomes <code class="language-plaintext highlighter-rouge">return None</code>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">(</span><span class="k">define</span> <span class="p">(</span><span class="nf">canonicalize-return</span> <span class="nv">stmt</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">match</span> <span class="nv">stmt</span>
+    <span class="p">[</span><span class="o">`</span><span class="p">(</span><span class="nf">Return</span><span class="p">)</span>  <span class="p">(</span><span class="nb">list</span> <span class="o">'</span><span class="p">(</span><span class="nf">Return</span> <span class="p">(</span><span class="nf">NameConstant</span> <span class="nv">None</span><span class="p">)))]</span>
+    <span class="p">[</span><span class="nf">else</span>       <span class="p">(</span><span class="nb">list</span> <span class="nv">stmt</span><span class="p">)]))</span>
+</code></pre></div></div>
+
+<p>Some of the other interesting transforms we did in the phase are lifting decorators, and removing classes. Removing decorators from functions is a straightforward operation. Generally code of the form</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@&lt;decorator&gt;
+def &lt;name&gt;(&lt;parameters&gt;):
+  &lt;body&gt;
+</code></pre></div></div>
+
+<p>should be turned into code of the form</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def &lt;name&gt;(&lt;parameters&gt;):
+  &lt;body&gt;
+&lt;name&gt; = &lt;decorator&gt;(&lt;name&gt;)
+</code></pre></div></div>
+
+<p>After the end of this phase of the compiler we needed to normalize before applying any more desugarings.</p>
+
+<hr />
+
+<h2 id="normalizing">Normalizing</h2>
+
+<p>The main goal of normalization is breaking arbitrarily complex statements into bits that can be easily translated to machine code. This step is also where the order of evaluation is fixed. For example after this phase the statement <code class="language-plaintext highlighter-rouge">f(print(1), print(2))</code> could not possibly do anything other than print <code class="language-plaintext highlighter-rouge">1</code> then print <code class="language-plaintext highlighter-rouge">2</code>. In order to ensure the entire program was normalized we ran a normalizing tree transform until nothing happened. The normalizing transform matched every complex statement in the grammar and checked if all its sub-expressions were atomic. If they were not it bound them to a variable and then made the complex call with the variable instead.</p>
+
+<p>For example the statement</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">result</span> <span class="o">=</span> <span class="mi">3</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">y</span>
+</code></pre></div></div>
+
+<p>would be internally represented after parsing and desugaring as</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">'</span><span class="p">(</span><span class="nf">Assign</span> <span class="p">(</span><span class="nf">targets</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">result</span><span class="p">))</span>
+         <span class="p">(</span><span class="nf">BinOp</span> <span class="p">(</span><span class="nf">BinOp</span> <span class="p">(</span><span class="nf">Num</span> <span class="mi">3</span><span class="p">)</span> <span class="nv">Mult</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">x</span><span class="p">))</span>
+                <span class="nv">Add</span>
+                <span class="p">(</span><span class="nf">BinOp</span> <span class="p">(</span><span class="nf">Num</span> <span class="mi">4</span><span class="p">)</span> <span class="nv">Mult</span> <span class="p">(</span><span class="nf">Name</span> <span class="nv">y</span><span class="p">))))</span>
+</code></pre></div></div>
+
+<p>This internal representation would trigger the following match clause in the body of <code class="language-plaintext highlighter-rouge">normalize/stmt</code>.</p>
+
+<div class="language-racket highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">[</span><span class="o">`</span><span class="p">(</span><span class="nf">Assign</span> <span class="p">(</span><span class="nf">targets</span> <span class="o">,</span><span class="nv">target</span><span class="p">)</span> <span class="p">(</span><span class="nf">value</span> <span class="o">,</span><span class="nv">rhs</span><span class="p">))</span>
+ <span class="nt">#:when</span> <span class="p">(</span><span class="nb">not</span> <span class="p">(</span><span class="nf">normalized?</span> <span class="nv">rhs</span><span class="p">))</span>
+ <span class="o">`</span><span class="p">((</span><span class="nf">Assign</span> <span class="p">(</span><span class="nf">targets</span> <span class="o">,</span><span class="nv">target</span><span class="p">)</span>
+           <span class="p">(</span><span class="nf">value</span> <span class="o">,</span><span class="p">(</span><span class="nf">normalize-expr!</span> <span class="nv">rhs</span><span class="p">))))]</span>
+</code></pre></div></div>
+
+<p>Then the following match clause would do the real work in the body of <code class="language-plaintext highlighter-rouge">normalize-expr!</code>.</p>
+
+<p>``racket
+[<code class="language-plaintext highlighter-rouge">(BinOp ,lhs ,op ,rhs)
+ </code>(BinOp ,(atomize! lhs) ,op ,(atomize! rhs))]</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+The `atomize!` function would just push the complex statements into their own assign statements and return the name of the new variable they were assigned to. The original statement would then look like this
+
+```python
+_tmp_1 = 3*x
+_tmp_2 = 4*y
+result = _tmp_1 + _tmp_2
+</code></pre></div></div>
+
+<hr />
+
+<h2 id="finishing">Finishing</h2>
+
+<p>There were still a couple of nasty things to take care of before the Python structures we had at this point could be translated into machine code. In order to deal with the yield construct we were going to do a double <a href="http://matt.might.net/articles/cps-conversion/">CPS transform</a>. There was also a fair amount of other steps to take before we arrived at a true low level language.</p>
+
+  </div>
+
+</article>
+
+      </div>
+    </div>
+
+    <footer class="site-footer">
+
+  <div class="wrapper">
+
+    <div class="footer-wrapper">
+      <a class="site-title" href="/">
+  <span class="site-title-brace">{</span>
+  Tobin Yehle
+  <span class="site-title-brace">}</span>
+</a>
+      <br>
+      <a class="footer-contact" href="mailto:tobin.yehle@gmail.com">tobin.yehle@gmail.com</a>
+      <br>
+       <a class="username" href="https://github.com/tyehle">
+	<span class="icon icon--github"><svg viewBox="0 0 16 16">
+    <g>
+        <path d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/>
+    </g>
+</svg>
+</span>
+	tyehle
+</a>
+ 
+    </div>
+
+  </div>
+
+</footer>
+
+
+  </body>
+
+</html>
